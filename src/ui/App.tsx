@@ -4,6 +4,7 @@ import { AddNote } from "./AddNote";
 import { Browser } from "./Browser";
 import { Courses, CourseView, LessonPlayer } from "./Courses";
 import { CustomStudy } from "./CustomStudy";
+import { DialogHost, modalOpen } from "./dialog";
 import { DeckList } from "./DeckList";
 import { DeckOptions } from "./DeckOptions";
 import { ExportPage, ImportPage } from "./ImportExport";
@@ -33,7 +34,7 @@ export function App() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       const typing = t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable;
-      if (route.name === "study" || route.name === "lesson") return; // these screens handle their own keys
+      if (modalOpen() || route.name === "study" || route.name === "lesson") return; // these screens handle their own keys
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !typing) {
         e.preventDefault();
         const l = e.shiftKey ? store.redo() : store.undo();
@@ -137,6 +138,7 @@ export function App() {
       </div>
       {page}
       {msg && <div className="toast">{msg}</div>}
+      <DialogHost />
     </Nav.Provider>
   );
 }

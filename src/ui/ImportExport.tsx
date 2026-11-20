@@ -1,3 +1,4 @@
+import { askConfirm } from "./dialog";
 import { useState } from "react";
 import {
   download,
@@ -49,7 +50,7 @@ export function ImportPage() {
         return go({ name: "decks" });
       }
       if (d.cards && d.notes && d.decks && d.notetypes) {
-        if (!confirm("This is a full collection backup. Importing it will REPLACE your entire collection. Continue?")) return;
+        if (!await askConfirm("This is a full collection backup. Importing it will REPLACE your entire collection. Continue?")) return;
         store.replace(d as Collection);
         toast("Collection restored.");
         return go({ name: "decks" });

@@ -1,3 +1,4 @@
+import { askConfirm, showMessage } from "./dialog";
 import { store, useCol } from "../lib/store";
 import { useNav } from "./nav";
 
@@ -36,18 +37,18 @@ export function Prefs() {
         <legend>Tools</legend>
         <div className="row">
           <button
-            onClick={() => {
+            onClick={async () => {
               const msgs = store.update("Check Database", (c) => c.checkDatabase());
-              alert(msgs.join("\n"));
+              await showMessage(msgs.join("\n"));
             }}
           >
             Check Database
           </button>
           <button
-            onClick={() => {
+            onClick={async () => {
               const cids = col.emptyCards();
               if (!cids.length) return toast("No empty cards.");
-              if (confirm(`Delete ${cids.length} empty cards?`)) {
+              if (await askConfirm(`Delete ${cids.length} empty cards?`)) {
                 store.update("Empty Cards", (c) => c.removeCards(cids));
                 toast(`${cids.length} cards deleted.`);
               }

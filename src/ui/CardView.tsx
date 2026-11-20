@@ -9,7 +9,16 @@ input#typeans { width: 90%; max-width: 500px; padding: 4px; }
 .typeGood { background: #afa; } .typeBad { background: #faa; } .typeMissed { background: #ccc; }
 .tts { border: 1px solid #aaa; border-radius: 50%; background: none; width: 28px; height: 28px; cursor: pointer; font-size: 12px; }
 img { max-width: 100%; }
+.card.nightMode { background-color: #1f2124; color: #e4e6e9; }
+.nightMode .cloze { color: #7fb2ff; }
 `;
+
+/** Matches the app theme: explicit data-theme wins, otherwise the OS setting (like Anki's night mode). */
+function isDark(): boolean {
+  const t = document.documentElement.getAttribute("data-theme");
+  if (t) return t === "dark";
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+}
 
 /** Renders card HTML in a shadow root so note-type CSS doesn't leak into the app. */
 export function CardView({
@@ -33,7 +42,8 @@ export function CardView({
     const el = host.current;
     if (!el) return;
     const root = el.shadowRoot ?? el.attachShadow({ mode: "open" });
-    root.innerHTML = `<style>${BASE_CSS}\n${css}</style><div class="${cardClass}">${html}</div>`;
+    const night = isDark() ? " nightMode night_mode" : "";
+    root.innerHTML = `<style>${BASE_CSS}\n${css}</style><div class="${cardClass}${night}">${html}</div>`;
     // run template scripts like Anki does
     root.querySelectorAll("script").forEach((old) => {
       const s = document.createElement("script");

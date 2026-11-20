@@ -1,3 +1,4 @@
+import { askConfirm, modalOpen } from "./dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   allLessons,
@@ -66,8 +67,8 @@ export function Courses() {
                 <td style={{ textAlign: "right" }}>
                   <button onClick={() => download(`${c.id}.course.json`, JSON.stringify(c, null, 2))}>Export</button>{" "}
                   <button
-                    onClick={() => {
-                      if (confirm(`Delete course "${c.title}"? Your progress in it is removed too.`))
+                    onClick={async () => {
+                      if (await askConfirm(`Delete course "${c.title}"? Your progress in it is removed too.`))
                         store.update("Delete Course", (cc) => {
                           delete cc.d.courses[c.id];
                           delete cc.d.courseProgress.lessons[c.id];
@@ -132,7 +133,7 @@ export function CourseView({ id }: { id: string }) {
               })}
             </tbody>
           </table>
-          {u.lessons.map((l) => tips === l.id && <div key={l.id} className="small" style={{ padding: 8, border: "1px solid #ddd" }} dangerouslySetInnerHTML={{ __html: l.tips! }} />)}
+          {u.lessons.map((l) => tips === l.id && <div key={l.id} className="small" style={{ padding: 8, border: "1px solid var(--line)" }} dangerouslySetInnerHTML={{ __html: l.tips! }} />)}
         </div>
       ))}
       <button
@@ -226,9 +227,9 @@ export function LessonPlayer({ courseId, lessonId }: { courseId: string; lessonI
   return (
     <div className="page" style={{ maxWidth: 640 }}>
       <div className="row" style={{ marginBottom: 16 }}>
-        <a onClick={() => confirm("Quit this lesson? Progress in it will be lost.") && go({ name: "course", id: courseId })}>✕</a>
-        <div style={{ flex: 1, height: 8, background: "#eee" }}>
-          <div style={{ width: `${(finishedCount / Math.max(1, total)) * 100}%`, height: "100%", background: "#6b9bd1" }} />
+        <a onClick={async () => await askConfirm("Quit this lesson? Progress in it will be lost.") && go({ name: "course", id: courseId })}>✕</a>
+        <div style={{ flex: 1, height: 8, background: "var(--soft)" }}>
+          <div style={{ width: `${(finishedCount / Math.max(1, total)) * 100}%`, height: "100%", background: "var(--accent)" }} />
         </div>
       </div>
       {cur.retry && <div className="small muted">Previous mistake</div>}
@@ -245,7 +246,7 @@ function Feedback({ fb, onContinue }: { fb: { result: Result; correct: string };
     const mounted = performance.now();
     const h = (e: KeyboardEvent) => {
       // ignore the Enter that submitted the answer (it happened before this mounted)
-      if (e.key === "Enter" && !e.repeat && e.timeStamp > mounted) {
+      if (e.key === "Enter" && !e.repeat && e.timeStamp > mounted && !modalOpen()) {
         e.preventDefault();
         cb.current();
       }
@@ -255,7 +256,7 @@ function Feedback({ fb, onContinue }: { fb: { result: Result; correct: string };
   }, []);
   const ok = fb.result !== "wrong";
   return (
-    <div style={{ marginTop: 16, padding: 12, background: ok ? "#e8f5e9" : "#ffebee" }}>
+    <div style={{ marginTop: 16, padding: 12, background: ok ? "var(--good-bg)" : "var(--bad-bg)" }}>
       <b>{fb.result === "correct" ? "Correct!" : fb.result === "accent" ? "Almost — watch the accents:" : "Correct answer:"}</b>
       {fb.result !== "correct" && <div>{fb.correct}</div>}
       <div style={{ marginTop: 8 }}>
@@ -325,7 +326,7 @@ function ChoiceEx({ ex, lang, locked, onSubmit }: ExProps & { ex: Extract<Exerci
   const check = () => sel !== null && onSubmit(ex.choices[sel] === correct ? "correct" : "wrong", correct);
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (locked) return;
+      if (locked || modalOpen()) return;
       const n = Number(e.key);
       if (n >= 1 && n <= ex.choices.length) setSel(n - 1);
       else if (e.key === "Enter" && sel !== null) {
@@ -349,7 +350,7 @@ function ChoiceEx({ ex, lang, locked, onSubmit }: ExProps & { ex: Extract<Exerci
       <p style={{ fontSize: 22 }}>{ex.prompt}</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {ex.choices.map((c, i) => (
-          <button key={i} disabled={locked} onClick={() => setSel(i)} style={{ textAlign: "left", fontWeight: sel === i ? "bold" : undefined, background: sel === i ? "#ddeeff" : undefined }}>
+          <button key={i} disabled={locked} onClick={() => setSel(i)} style={{ textAlign: "left", fontWeight: sel === i ? "bold" : undefined, background: sel === i ? "var(--sel)" : undefined }}>
             {i + 1}. {c}
           </button>
         ))}
@@ -367,7 +368,7 @@ function WordBank({ words, locked, onSubmit, answers }: { words: string[]; locke
   const check = () => picked.length && onSubmit(checkAnswer(picked.map((i) => tiles[i]).join(" "), answers), answers[0]);
   return (
     <div>
-      <div style={{ minHeight: 40, borderBottom: "1px solid #ccc", padding: 4 }} className="row">
+      <div style={{ minHeight: 40, borderBottom: "1px solid var(--line)", padding: 4 }} className="row">
         {picked.map((i, j) => (
           <button key={j} disabled={locked} onClick={() => setPicked(picked.filter((_, k) => k !== j))}>
             {tiles[i]}
@@ -478,7 +479,7 @@ function MatchEx({ ex, lang, onSubmit }: ExProps & { ex: Extract<Exercise, { typ
       <button
         key={item.i}
         disabled={done}
-        style={{ opacity: done ? 0.3 : 1, fontWeight: sel === item.i ? "bold" : undefined, background: sel === item.i ? (wrong ? "#fdd" : "#ddeeff") : undefined }}
+        style={{ opacity: done ? 0.3 : 1, fontWeight: sel === item.i ? "bold" : undefined, background: sel === item.i ? (wrong ? "var(--bad-bg)" : "var(--sel)") : undefined }}
         onClick={() => {
           if (side === "l") {
             speak(item.t, lang);

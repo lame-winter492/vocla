@@ -1,3 +1,4 @@
+import { askConfirm, modalOpen } from "./dialog";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { QueuedCard } from "../lib/col";
 import { store, useCol } from "../lib/store";
@@ -80,7 +81,7 @@ export function Study({ did }: { did: ID }) {
   };
 
   const onKey = (e: KeyboardEvent) => {
-    if (editing || info) return;
+    if (editing || info || modalOpen()) return;
     const t = e.target as HTMLElement;
     if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT") return;
     const k = e.key;
@@ -227,8 +228,8 @@ export function Study({ did }: { did: ID }) {
             Suspend Note (!)
           </button>
           <button
-            onClick={() => {
-              if (confirm("Delete this note and all its cards?")) noteAction("Delete Note", () => store.col.removeNotes([card.nid]), "Note deleted.");
+            onClick={async () => {
+              if (await askConfirm("Delete this note and all its cards?")) noteAction("Delete Note", () => store.col.removeNotes([card.nid]), "Note deleted.");
             }}
           >
             Delete

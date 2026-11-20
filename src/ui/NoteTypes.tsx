@@ -1,3 +1,4 @@
+import { askChoice, askConfirm, askText } from "./dialog";
 import { useState } from "react";
 import { newId, STOCK_NAMES, stockNoteType, type StockKind } from "../lib/stock";
 import { store, useCol } from "../lib/store";
@@ -14,14 +15,13 @@ export function NoteTypes() {
 
   if (editing && nt) return <NoteTypeEditor key={nt.id} nt={nt} mode={editing} onDone={() => setEditing(null)} />;
 
-  const add = () => {
+  const add = async () => {
     const choices = [...Object.values(STOCK_NAMES).map((v) => `Add: ${v}`), ...col.notetypes().map((n) => `Clone: ${n.name}`)];
-    const pick = prompt("Choose a base (enter number):\n" + choices.map((c, i) => `${i + 1}. ${c}`).join("\n"), "1");
-    const idx = Number(pick) - 1;
-    if (isNaN(idx) || idx < 0 || idx >= choices.length) return;
+    const idx = await askChoice("Start the new note type from:", choices);
+    if (idx === null) return;
     const stockKeys = Object.keys(STOCK_NAMES) as StockKind[];
     const baseName = idx < stockKeys.length ? STOCK_NAMES[stockKeys[idx]] : col.notetypes()[idx - stockKeys.length].name + " copy";
-    const name = prompt("Name:", baseName);
+    const name = await askText("Name:", baseName);
     if (!name) return;
     const created = store.update("Add Note Type", (c) => {
       const n: NoteType =
@@ -49,8 +49,8 @@ export function NoteTypes() {
           <button onClick={add}>Add</button>
           <button
             disabled={!nt}
-            onClick={() => {
-              const name = nt && prompt("Rename:", nt.name);
+            onClick={async () => {
+              const name = nt && await askText("Rename:", nt.name);
               if (nt && name) store.update("Rename Note Type", (c) => (c.d.notetypes[nt.id].name = name));
             }}
           >
@@ -64,10 +64,10 @@ export function NoteTypes() {
           </button>
           <button
             disabled={!nt}
-            onClick={() => {
+            onClick={async () => {
               if (!nt) return;
               if (col.notetypes().length <= 1) return toast("You need at least one note type.");
-              if (!confirm(`Delete "${nt.name}" and its ${col.useCount(nt.id)} notes?`)) return;
+              if (!await askConfirm(`Delete "${nt.name}" and its ${col.useCount(nt.id)} notes?`)) return;
               store.update("Delete Note Type", (c) => c.removeNoteType(nt.id));
               setSel(col.notetypes()[0]?.id ?? null);
             }}
@@ -136,8 +136,8 @@ function NoteTypeEditor({ nt: orig, mode, onDone }: { nt: NoteType; mode: "field
           </select>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <button
-              onClick={() => {
-                const name = prompt("Field name:");
+              onClick={async () => {
+                const name = await askText("Field name:");
                 if (!name) return;
                 if (nt.fields.some((f) => f.name === name)) return toast("That field name is already used.");
                 upd((n) => n.fields.push({ name }));
@@ -147,9 +147,9 @@ function NoteTypeEditor({ nt: orig, mode, onDone }: { nt: NoteType; mode: "field
               Add
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (nt.fields.length <= 1) return toast("A note type needs at least one field.");
-                if (!confirm(`Delete field "${nt.fields[fsel].name}"? Its content will be lost.`)) return;
+                if (!await askConfirm(`Delete field "${nt.fields[fsel].name}"? Its content will be lost.`)) return;
                 upd((n) => {
                   n.fields.splice(fsel, 1);
                   if (n.sortField >= n.fields.length) n.sortField = 0;
@@ -161,9 +161,9 @@ function NoteTypeEditor({ nt: orig, mode, onDone }: { nt: NoteType; mode: "field
               Delete
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 const old = nt.fields[fsel].name;
-                const name = prompt("New name:", old);
+                const name = await askText("New name:", old);
                 if (!name || name === old) return;
                 if (nt.fields.some((f) => f.name === name)) return toast("That field name is already used.");
                 upd((n) => {
@@ -218,9 +218,9 @@ function NoteTypeEditor({ nt: orig, mode, onDone }: { nt: NoteType; mode: "field
               Add Card Type
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 if (nt.templates.length <= 1) return toast("At least one card type is required.");
-                if (!confirm(`Delete "${tpl.name}" and all cards using it?`)) return;
+                if (!await askConfirm(`Delete "${tpl.name}" and all cards using it?`)) return;
                 upd((n) => n.templates.splice(tsel, 1));
                 setTmplOrig(tmplOrig.filter((_, i) => i !== tsel));
                 setTsel(0);
@@ -229,8 +229,8 @@ function NoteTypeEditor({ nt: orig, mode, onDone }: { nt: NoteType; mode: "field
               Remove
             </button>
             <button
-              onClick={() => {
-                const name = prompt("Card type name:", tpl.name);
+              onClick={async () => {
+                const name = await askText("Card type name:", tpl.name);
                 if (name) upd((n) => (n.templates[tsel].name = name));
               }}
             >
@@ -279,7 +279,7 @@ function NoteTypeEditor({ nt: orig, mode, onDone }: { nt: NoteType; mode: "field
           <label>
             <input type="checkbox" checked={previewBack} onChange={(e) => setPreviewBack(e.target.checked)} /> Preview back side
           </label>
-          <div style={{ border: "1px solid #ddd" }}>
+          <div style={{ border: "1px solid var(--line)" }}>
             <CardView html={previewBack ? sample(nt).a : sample(nt).q} css={nt.css} cardClass={`card card${tsel + 1}`} />
           </div>
         </div>

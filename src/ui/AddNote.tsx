@@ -1,3 +1,4 @@
+import { askConfirm } from "./dialog";
 import { useEffect, useMemo, useState } from "react";
 import { store, useCol } from "../lib/store";
 import { stripHtml } from "../lib/template";
@@ -23,13 +24,13 @@ export function AddNote({ did: initialDid }: { did?: ID }) {
 
   const dupe = useMemo(() => col.findDupes(note).length > 0, [col, note]);
 
-  const add = () => {
+  const add = async () => {
     if (!stripHtml(note.fields[0] ?? "").trim() && !note.fields[0]?.includes("<img")) {
       toast("The first field is empty.");
       return;
     }
     if (nt.kind === "cloze" && !note.fields.some((f) => /\{\{c\d+::/.test(f))) {
-      if (!confirm("You have a cloze note type but have not made any cloze deletions. Proceed?")) return;
+      if (!await askConfirm("You have a cloze note type but have not made any cloze deletions. Proceed?")) return;
     }
     const n = store.update("Add Note", (c) => {
       c.d.prefs.lastNoteType = ntid;

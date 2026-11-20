@@ -1,3 +1,4 @@
+import { askText, askConfirm } from "./dialog";
 import { useState } from "react";
 import { store, useCol } from "../lib/store";
 import type { DeckConfig, ID } from "../lib/types";
@@ -74,24 +75,24 @@ export function DeckOptions({ did }: { did: ID }) {
           ))}
         </select>
         <button
-          onClick={() => {
-            const name = prompt("Name for new preset:", "New preset");
+          onClick={async () => {
+            const name = await askText("Name for new preset:", "New preset");
             if (name) switchPreset(store.update("Add Preset", (cc) => cc.addConfig(name)).id);
           }}
         >
           Add
         </button>
         <button
-          onClick={() => {
-            const name = prompt("Name for cloned preset:", conf.name + " copy");
+          onClick={async () => {
+            const name = await askText("Name for cloned preset:", conf.name + " copy");
             if (name) switchPreset(store.update("Clone Preset", (cc) => cc.addConfig(name, conf)).id);
           }}
         >
           Clone
         </button>
         <button
-          onClick={() => {
-            const name = prompt("Rename preset:", conf.name);
+          onClick={async () => {
+            const name = await askText("Rename preset:", conf.name);
             if (name) upd((c) => (c.name = name));
           }}
         >
@@ -99,8 +100,8 @@ export function DeckOptions({ did }: { did: ID }) {
         </button>
         <button
           disabled={conf.id === 1}
-          onClick={() => {
-            if (!confirm(`Remove preset "${conf.name}" (used by ${usedBy} decks)?`)) return;
+          onClick={async () => {
+            if (!await askConfirm(`Remove preset "${conf.name}" (used by ${usedBy} decks)?`)) return;
             store.update("Remove Preset", (cc) => cc.removeConfig(conf.id));
             switchPreset(1);
           }}

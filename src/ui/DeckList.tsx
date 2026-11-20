@@ -1,3 +1,4 @@
+import { askText, askConfirm } from "./dialog";
 import { useState, type ReactNode } from "react";
 import { dayNumber } from "../lib/time";
 import type { DeckTreeNode } from "../lib/col";
@@ -10,8 +11,8 @@ export function DeckList() {
   const tree = col.deckTree();
   const [menu, setMenu] = useState<number | null>(null);
 
-  const createDeck = () => {
-    const name = prompt("New deck name (use :: for subdecks):");
+  const createDeck = async () => {
+    const name = await askText("New deck name (use :: for subdecks):");
     if (!name?.trim()) return;
     store.update("Add Deck", (c) => c.addDeck(name));
   };
@@ -47,12 +48,12 @@ export function DeckList() {
             <button onClick={() => setMenu(menu === d.id ? null : d.id)}>⚙</button>
             {menu === d.id && (
               <div
-                style={{ position: "absolute", right: 0, top: 28, background: "#fff", border: "1px solid #ccc", zIndex: 10, display: "flex", flexDirection: "column" }}
+                style={{ position: "absolute", right: 0, top: 28, background: "var(--bg)", border: "1px solid var(--line)", zIndex: 10, display: "flex", flexDirection: "column" }}
                 onMouseLeave={() => setMenu(null)}
               >
                 <button
-                  onClick={() => {
-                    const name = prompt("Rename deck:", d.name);
+                  onClick={async () => {
+                    const name = await askText("Rename deck:", d.name);
                     if (name)
                       try {
                         store.update("Rename Deck", (c) => c.renameDeck(d.id, name));
@@ -71,10 +72,10 @@ export function DeckList() {
                 )}
                 <button onClick={() => go({ name: "export", did: d.id })}>Export</button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const n = col.deckAndChildren(d.id).length;
                     const cards = Object.values(col.d.cards).filter((c) => col.deckAndChildren(d.id).some((x) => x.id === c.did)).length;
-                    if (confirm(`Delete "${d.name}"${n > 1 ? ` and ${n - 1} subdecks` : ""}${d.dyn ? "" : ` with ${cards} cards`}?`)) {
+                    if (await askConfirm(`Delete "${d.name}"${n > 1 ? ` and ${n - 1} subdecks` : ""}${d.dyn ? "" : ` with ${cards} cards`}?`)) {
                       store.update("Delete Deck", (c) => c.removeDeck(d.id));
                       toast("Deck deleted.");
                     }

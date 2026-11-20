@@ -1,3 +1,4 @@
+import { askText } from "./dialog";
 import { store, useCol } from "../lib/store";
 import { formatIvlSecs } from "../lib/time";
 import { useNav } from "./nav";
@@ -62,8 +63,8 @@ export function Overview({ did }: { did: number }) {
             <button onClick={() => go({ name: "options", did })}>Options</button>
             <button onClick={() => go({ name: "custom", did })}>Custom Study</button>
             <button
-              onClick={() => {
-                const d = prompt("Deck description (HTML allowed):", deck.description);
+              onClick={async () => {
+                const d = await askText("Deck description (HTML allowed):", deck.description);
                 if (d !== null) store.update("Description", (cc) => (cc.d.decks[did].description = d));
               }}
             >

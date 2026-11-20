@@ -1,3 +1,4 @@
+import { askText, askConfirm } from "./dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { searchCards } from "../lib/search";
 import { store, useCol } from "../lib/store";
@@ -293,8 +294,8 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
           />
           <button onClick={() => search(input)}>Search</button>
           <button
-            onClick={() => {
-              const name = prompt("Name for saved search:");
+            onClick={async () => {
+              const name = await askText("Name for saved search:");
               if (name) store.update("Save Search", (c) => (c.d.savedSearches[name] = input));
             }}
           >
@@ -319,14 +320,14 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
           <button onClick={() => setSelected(new Set(rows))}>Select All</button>
           <button onClick={() => setModal("deck")}>Change Deck</button>
           <button
-            onClick={() => {
-              const spec = prompt("Set due date. Examples: 0 = today, 1! = tomorrow + change interval to 1, 3-7 = random 3-7 days", "0");
+            onClick={async () => {
+              const spec = await askText("Set due date. Examples: 0 = today, 1! = tomorrow + change interval to 1, 3-7 = random 3-7 days", "0");
               if (spec !== null) act("Set Due Date", () => store.col.setDueDate(selCardIds(), spec));
             }}
           >
             Set Due Date
           </button>
-          <button onClick={() => confirm("Reset selected cards to new?") && act("Forget", () => store.col.forgetCards(selCardIds()), "Cards reset.")}>
+          <button onClick={async () => await askConfirm("Reset selected cards to new?") && act("Forget", () => store.col.forgetCards(selCardIds()), "Cards reset.")}>
             Forget
           </button>
           <button onClick={() => setModal("reposition")}>Reposition</button>
@@ -359,16 +360,16 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
           </select>
           <button onClick={() => act("Toggle Mark", () => store.col.toggleMark(selNoteIds()))}>Mark</button>
           <button
-            onClick={() => {
-              const t = prompt("Add tags (space separated):");
+            onClick={async () => {
+              const t = await askText("Add tags (space separated):");
               if (t) act("Add Tags", () => store.col.addTags(selNoteIds(), t.split(/\s+/)));
             }}
           >
             Add Tags
           </button>
           <button
-            onClick={() => {
-              const t = prompt("Remove tags (space separated):");
+            onClick={async () => {
+              const t = await askText("Remove tags (space separated):");
               if (t) act("Remove Tags", () => store.col.removeTags(selNoteIds(), t.split(/\s+/)));
             }}
           >
@@ -383,9 +384,9 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
             Preview
           </button>
           <button
-            onClick={() => {
+            onClick={async () => {
               const nids = selNoteIds();
-              if (nids.length && confirm(`Delete ${nids.length} note(s) and their cards?`)) {
+              if (nids.length && await askConfirm(`Delete ${nids.length} note(s) and their cards?`)) {
                 act("Delete Notes", () => store.col.removeNotes(nids), `${nids.length} notes deleted.`);
                 setSelected(new Set());
               }
@@ -532,8 +533,8 @@ function ChangeDeck({ onPick }: { onPick: (did: ID) => void }) {
       <div className="row">
         <button onClick={() => did && onPick(did)}>Move</button>
         <button
-          onClick={() => {
-            const name = prompt("New deck name:");
+          onClick={async () => {
+            const name = await askText("New deck name:");
             if (name) onPick(store.update("Add Deck", (c) => c.addDeck(name)).id);
           }}
         >
