@@ -1,95 +1,34 @@
 /* ==========================================================================
-   The two looks (same layout, different material), matching the native app:
-   - Liquid Glass (default, html[data-look="liquid"]): every card, list and control is clear glass. A light
-     blur that keeps the colour behind it, a bright specular rim on the top edge.
+   The two looks, as in Apple's own apps: content (cards, grouped lists, tables) is always solid on the
+   plain system background (light #F2F2F7 with white cards; dark #1C1C1E with #2C2C2E cards). Only the
+   floating chrome (tab bar / sidebar, toolbars, menus, sheets, buttons) is made of the material:
+   - Liquid Glass (default, html[data-look="liquid"]): clear glass, light blur, bright specular rim.
    - Frosted (html[data-look="frosted"]): the thicker, milkier materials of earlier iOS: heavy blur, low
-     saturation, a soft edge instead of a rim.
-   Both sit on soft coloured light so the material always has something to bend or blur, and both follow
-   light/dark mode. Reduce Transparency (Preferences, or the system setting) makes everything solid.
+     saturation, a soft hairline edge instead of a rim.
+   Reduce Transparency (Preferences, or the system setting) makes the chrome solid too.
    ========================================================================== */
 
-html[data-design="glass"] {
-  --glow-1: rgba(122, 184, 255, 0.55);
-  --glow-2: rgba(201, 166, 255, 0.5);
-  --glow-3: rgba(142, 230, 216, 0.5);
-  --surface: rgba(255, 255, 255, 0.5);
-  --card-blur: blur(18px) saturate(185%);
-  --card-rim: inset 0 1px 0.5px rgba(255, 255, 255, 0.95), inset 0 0 0 0.5px rgba(255, 255, 255, 0.6), 0 10px 30px rgba(20, 30, 60, 0.08);
-}
-@media (prefers-color-scheme: dark) {
-  html[data-design="glass"]:not([data-theme="light"]) {
-    --glow-1: rgba(10, 61, 145, 0.85);
-    --glow-2: rgba(75, 31, 122, 0.8);
-    --glow-3: rgba(11, 92, 87, 0.75);
-    --surface: rgba(255, 255, 255, 0.07);
-    --card-rim: inset 0 1px 0.5px rgba(255, 255, 255, 0.24), inset 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 10px 30px rgba(0, 0, 0, 0.45);
-  }
-}
-html[data-design="glass"][data-theme="dark"] {
-  --glow-1: rgba(10, 61, 145, 0.85);
-  --glow-2: rgba(75, 31, 122, 0.8);
-  --glow-3: rgba(11, 92, 87, 0.75);
-  --surface: rgba(255, 255, 255, 0.07);
-  --card-rim: inset 0 1px 0.5px rgba(255, 255, 255, 0.24), inset 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 10px 30px rgba(0, 0, 0, 0.45);
-}
+html[data-design="glass"] body { background: var(--bg); }
 
-/* Frosted: thick, milky, no specular rim */
+/* Frosted chrome: thick, milky, no specular rim */
 html[data-design="glass"][data-look="frosted"] {
-  --surface: rgba(250, 250, 252, 0.74);
-  --card-blur: blur(36px) saturate(120%);
-  --card-rim: inset 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 6px 22px rgba(20, 30, 60, 0.07);
-  --glass-bg: rgba(248, 248, 250, 0.8);
-  --glass-strong: rgba(250, 250, 252, 0.9);
-  --glass-blur: blur(36px) saturate(120%);
-  --glass-rim: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(249, 249, 249, 0.86);
+  --glass-strong: rgba(249, 249, 249, 0.94);
+  --glass-blur: blur(30px) saturate(140%);
+  --glass-rim: inset 0 0 0 0.5px rgba(0, 0, 0, 0.1);
 }
 @media (prefers-color-scheme: dark) {
   html[data-design="glass"][data-look="frosted"]:not([data-theme="light"]) {
-    --surface: rgba(44, 44, 48, 0.72);
-    --card-rim: inset 0 0 0 0.5px rgba(255, 255, 255, 0.07), 0 6px 22px rgba(0, 0, 0, 0.4);
-    --glass-bg: rgba(40, 40, 44, 0.8);
-    --glass-strong: rgba(48, 48, 52, 0.9);
-    --glass-rim: inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+    --glass-bg: rgba(37, 37, 39, 0.86);
+    --glass-strong: rgba(44, 44, 46, 0.94);
+    --glass-rim: inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
   }
 }
 html[data-design="glass"][data-look="frosted"][data-theme="dark"] {
-  --surface: rgba(44, 44, 48, 0.72);
-  --card-rim: inset 0 0 0 0.5px rgba(255, 255, 255, 0.07), 0 6px 22px rgba(0, 0, 0, 0.4);
-  --glass-bg: rgba(40, 40, 44, 0.8);
-  --glass-strong: rgba(48, 48, 52, 0.9);
-  --glass-rim: inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --glass-bg: rgba(37, 37, 39, 0.86);
+  --glass-strong: rgba(44, 44, 46, 0.94);
+  --glass-rim: inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
 }
 
-/* the soft light behind everything (fixed: content scrolls over it) */
-html[data-design="glass"] body {
-  background:
-    radial-gradient(60vmax 50vmax at 8% 4%, var(--glow-1), transparent 70%),
-    radial-gradient(55vmax 50vmax at 98% 45%, var(--glow-2), transparent 70%),
-    radial-gradient(60vmax 45vmax at 18% 100%, var(--glow-3), transparent 70%),
-    var(--bg);
-  background-attachment: fixed;
-}
-
-/* every card and grouped list is made of the material */
-html[data-design="glass"] :is(.hero, .decklist, .panel, .tablewrap, fieldset, .cardview, .option, .tile, .tile-card .thumb, .browser .sidebar, button.streak-ring, .app-row .monogram + *, .course-card) {
-  -webkit-backdrop-filter: var(--card-blur);
-  backdrop-filter: var(--card-blur);
-}
-html[data-design="glass"] :is(.hero, .decklist, .panel, .tablewrap, fieldset, .cardview, .tile-card .thumb, button.streak-ring) {
-  box-shadow: var(--card-rim);
-}
-html[data-design="glass"] .hero.story { box-shadow: var(--card-rim), 0 14px 40px rgba(20, 30, 60, 0.1); }
-/* sticky table header stays readable over the rows scrolling beneath it */
+/* sticky table header stays readable over the rows scrolling beneath it (a bar, so it is material) */
 html[data-design="glass"] .browser thead th { background: var(--glass-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
-
-/* Reduce Transparency: solid surfaces, no blur, plain background */
-html.solid-glass[data-design="glass"][data-look] { --surface: var(--raised); --card-blur: none; }
-html.solid-glass[data-design="glass"] body { background: var(--bg); }
-@media (prefers-reduced-transparency: reduce) {
-  html[data-design="glass"][data-look] { --surface: var(--raised); --card-blur: none; }
-  html[data-design="glass"] body { background: var(--bg); }
-}
-
-/* a backdrop-filter makes its own stacking context, which would trap a lifted row's context menu under the
-   scrim: while a row is lifted, its list drops the blur (the scrim blurs everything behind it anyway) */
-html[data-design="glass"] .decklist:has(tr.lifted) { -webkit-backdrop-filter: none; backdrop-filter: none; }

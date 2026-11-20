@@ -1,7 +1,8 @@
 // Two looks, both in iOS's own visual language and both following light/dark mode:
-// - "liquid": Liquid Glass (iOS 26). Controls and cards are clear glass that bends and lights up the
-//   content behind it; the tab bar is the system's floating glass bar with its lens.
+// - "liquid": Liquid Glass (iOS 26). Controls are clear glass that bends and lights up the content behind
+//   it; the tab bar is the system's floating glass bar with its lens.
 // - "frosted": the frosted materials of iOS 18 and earlier: soft blur, no refraction.
+// In both, content sits solid on Apple's grouped colours (light #F2F2F7 + white cards, dark #1C1C1E + #2C2C2E).
 import { Platform, useColorScheme, type TextStyle } from 'react-native';
 
 import { useCol } from '@core/store';
@@ -9,7 +10,7 @@ import { useCol } from '@core/store';
 export type Look = 'liquid' | 'frosted';
 
 export interface Palette {
-  bg: string; // behind everything (the ambient backdrop is drawn on top of it)
+  bg: string; // behind everything: systemGroupedBackground
   surface: string; // solid fill where a material isn't possible
   raised: string;
   fill: string; // text fields and quiet controls on top of a material
@@ -29,12 +30,10 @@ export interface Palette {
   learnC: string;
   revC: string;
   overlay: string;
-  /** colours of the soft light behind the glass */
-  glow: [string, string, string];
 }
 
 const LIGHT: Palette = {
-  bg: '#eef0f6',
+  bg: '#f2f2f7',
   surface: '#ffffff',
   raised: '#ffffff',
   fill: 'rgba(118,118,128,0.12)',
@@ -54,13 +53,12 @@ const LIGHT: Palette = {
   learnC: '#ff3b30',
   revC: '#28a745',
   overlay: 'rgba(0,0,0,0.22)',
-  glow: ['#7ab8ff', '#c9a6ff', '#8ee6d8'],
 };
 
 const DARK: Palette = {
-  bg: '#000000',
-  surface: '#1c1c1e',
-  raised: '#2c2c2e',
+  bg: '#1c1c1e',
+  surface: '#2c2c2e',
+  raised: '#3a3a3c',
   fill: 'rgba(118,118,128,0.24)',
   fg: '#ffffff',
   fg2: 'rgba(235,235,245,0.85)',
@@ -78,7 +76,6 @@ const DARK: Palette = {
   learnC: '#ff6961',
   revC: '#30d158',
   overlay: 'rgba(0,0,0,0.5)',
-  glow: ['#0a3d91', '#4b1f7a', '#0b5c57'],
 };
 
 export interface Theme {

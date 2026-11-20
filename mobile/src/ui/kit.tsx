@@ -157,7 +157,7 @@ export function Group({ header, footer, children, style }: { header?: string; fo
           {header}
         </T>
       ) : null}
-      <Surface radius={26} strong>
+      <Surface radius={26} content>
         {children}
       </Surface>
       {footer ? (

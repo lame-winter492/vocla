@@ -418,7 +418,7 @@ function FeedbackPanel({ fb, onContinue, bottom }: { fb: { result: Result; corre
       style={[styles.panel, { bottom: bottom + 8 }]}
       accessibilityLiveRegion="polite"
     >
-     <Surface radius={32} strong style={{ padding: 20, borderWidth: 2, borderColor: color }}>
+     <Surface radius={32} content style={{ padding: 20, borderWidth: 2, borderColor: color }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Icon size={28} color={color} strokeWidth={2.4} />
         <T v="title3" color={color}>

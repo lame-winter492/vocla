@@ -64,7 +64,7 @@ export default function Today() {
 
   const card = (
     <View style={styles.storyShadow}>
-      <Surface radius={30} strong style={styles.story}>
+      <Surface radius={30} content style={styles.story}>
         <T v="footnote" weight={600} color="accent" style={styles.caps}>
           {total > 0 ? 'Daily review' : nextLesson ? 'Continue learning' : 'All caught up'}
         </T>
@@ -150,7 +150,7 @@ export default function Today() {
             </T>
           </View>
         </View>
-        <Surface radius={26} strong>
+        <Surface radius={26} content>
           {rows.map(({ node }, i) => (
             <DeckRow key={node.deck.id} node={node} first={i === 0} />
           ))}

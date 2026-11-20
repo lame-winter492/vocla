@@ -339,7 +339,7 @@ export default function Study() {
           <Animated.View
             style={[styles.card, { shadowColor: '#000' }, cardStyle]}
           >
-            <Surface radius={32} strong style={{ flex: 1 }}>
+            <Surface radius={32} content style={{ flex: 1 }}>
               <CardView ref={cardView} content={content} onMessage={onCardMessage} style={{ borderRadius: 32 }} />
             </Surface>
             <Animated.View pointerEvents="none" style={[styles.stamp, styles.stampGood, { borderColor: t.c.good }, goodStamp]}>

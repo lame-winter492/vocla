@@ -206,6 +206,11 @@ html[data-nav^="card"] .reviewer .cardview { view-transition-name: card; }
 ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation-duration: 0.3s; }
 /* the tab bar materializes when coming back from a full-screen session, and dematerializes going in */
 ::view-transition-new(tabbar):only-child { animation: materialize var(--dur-snappy) var(--ease-snappy) both; }
+/* when the tab bar is on both sides of a transition it doesn't move: show only the live one (the "new"
+   snapshot is a live view), so its selection pill slides smoothly instead of being frozen and cross-faded */
+::view-transition-group(tabbar) { animation: none; }
+::view-transition-old(tabbar):not(:only-child) { display: none; }
+::view-transition-new(tabbar):not(:only-child) { animation: none; mix-blend-mode: normal; }
 ::view-transition-old(tabbar):only-child { animation: dematerialize 0.2s ease-in both; }
 @keyframes dematerialize { to { opacity: 0; scale: 0.8; filter: blur(8px); } }
 

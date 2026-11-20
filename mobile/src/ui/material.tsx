@@ -3,12 +3,12 @@
 // behind it, picks up its colour, and interactive pieces light up and flex under the finger. Where the
 // API isn't available (older iOS, Android, web) it falls back to a clear blur with a bright rim.
 // Frosted: the thicker, softer system materials of earlier iOS (UIBlurEffect), no refraction.
-// Both sit on a Backdrop of soft coloured light, so the material always has something to bend or blur.
+// As in Apple's own apps, only floating chrome (tab bar, buttons, banners, sheets) is made of a material;
+// content (cards, grouped lists) is solid on the plain system background (`content`).
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { type ReactNode } from 'react';
 import { Platform, StyleSheet, View, type ColorValue, type StyleProp, type ViewStyle } from 'react-native';
-import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { useTheme, type Look } from '@/theme';
 
@@ -21,6 +21,7 @@ export function Surface({
   interactive,
   tint,
   strong,
+  content,
   look,
 }: {
   children?: ReactNode;
@@ -32,12 +33,15 @@ export function Surface({
   tint?: ColorValue;
   /** a thicker material for content that must stay readable (cards, sheets) */
   strong?: boolean;
+  /** a content card: solid secondary-grouped fill, no material (cards and lists are never glass in iOS) */
+  content?: boolean;
   /** show a specific material regardless of the setting (the Appearance previews) */
   look?: Look;
 }) {
   const t0 = useTheme();
   const t = look ? { ...t0, look } : t0;
   const shape: ViewStyle = { borderRadius: radius, overflow: 'hidden' };
+  if (content) return <View style={[shape, { backgroundColor: t.c.surface }, style]}>{children}</View>;
   if (t.look === 'liquid' && nativeGlass) {
     return (
       <GlassView glassEffectStyle={strong ? 'regular' : 'clear'} isInteractive={interactive} tintColor={tint} colorScheme="auto" style={[shape, style]}>
@@ -89,32 +93,8 @@ export function Surface({
   );
 }
 
-/** Soft coloured light behind a screen (fixed while content scrolls over it). */
+/** The plain system background behind a screen. */
 export function Backdrop() {
   const t = useTheme();
-  const [a, b, c] = t.c.glow;
-  const o = t.dark ? 0.9 : 0.75;
-  return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: t.c.bg }]}>
-      <Svg width="100%" height="100%" preserveAspectRatio="none">
-        <Defs>
-          <RadialGradient id="g1" cx="12%" cy="8%" r="65%">
-            <Stop offset="0" stopColor={a} stopOpacity={o} />
-            <Stop offset="1" stopColor={a} stopOpacity={0} />
-          </RadialGradient>
-          <RadialGradient id="g2" cx="95%" cy="42%" r="60%">
-            <Stop offset="0" stopColor={b} stopOpacity={o} />
-            <Stop offset="1" stopColor={b} stopOpacity={0} />
-          </RadialGradient>
-          <RadialGradient id="g3" cx="20%" cy="92%" r="60%">
-            <Stop offset="0" stopColor={c} stopOpacity={o} />
-            <Stop offset="1" stopColor={c} stopOpacity={0} />
-          </RadialGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#g1)" />
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#g2)" />
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#g3)" />
-      </Svg>
-    </View>
-  );
+  return <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: t.c.bg }]} />;
 }

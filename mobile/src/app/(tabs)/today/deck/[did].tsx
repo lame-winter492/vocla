@@ -64,7 +64,7 @@ export default function DeckOverview() {
           },
         ]}
       />
-      <Surface radius={26} strong style={styles.counts}>
+      <Surface radius={26} content style={styles.counts}>
         {stat('New', c.newCount, t.c.newC)}
         {stat('Learning', c.learnCount, t.c.learnC)}
         {stat('To review', c.reviewCount, t.c.revC)}

@@ -71,7 +71,7 @@ export default function Stats() {
     <Screen>
       <Stack.Screen options={{ title: 'Statistics' }} />
       {/* today */}
-      <Surface radius={26} strong style={[card, { flexDirection: 'row', gap: 12 }]}>
+      <Surface radius={26} content style={[card, { flexDirection: 'row', gap: 12 }]}>
         {[
           [todayLogs.length, 'cards today', t.c.accent],
           [todayMin, 'minutes', t.c.fg],
@@ -95,7 +95,7 @@ export default function Stats() {
       <Segmented options={PERIODS.map((p) => p.label)} index={PERIODS.findIndex((p) => p.days === period)} onChange={(i) => setPeriod(PERIODS[i].days)} />
 
       {/* retention */}
-      <Surface radius={26} strong style={[card, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
+      <Surface radius={26} content style={[card, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
         <Ring key={period} value={retention ?? 0} size={92} stroke={11} color={t.c.good}>
           <T v="headline" style={roundedFont}>
             {retention === null ? '–' : `${Math.round(retention * 100)}%`}
@@ -115,7 +115,7 @@ export default function Stats() {
       <Chart key={`f${period}`} title="Coming up" note={bucket > 1 ? 'per week' : 'per day'} values={forecast} color={t.c.revC} style={card} left="today" right={`in ${period} days`} />
 
       {/* card maturity */}
-      <Surface radius={26} strong style={card}>
+      <Surface radius={26} content style={card}>
         <T v="headline" style={{ marginBottom: 12 }}>
           Cards
         </T>
@@ -201,7 +201,7 @@ function Chart({ title, note, values, color, style, left, right }: { title: stri
     p.value = withDelay(120, withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) }));
   }, [p]);
   return (
-    <Surface radius={26} strong style={style}>
+    <Surface radius={26} content style={style}>
       <View accessible accessibilityLabel={`${title}: ${total} total`}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
         <T v="headline">{title}</T>

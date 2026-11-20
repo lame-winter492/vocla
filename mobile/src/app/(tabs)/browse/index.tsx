@@ -221,7 +221,7 @@ export default function Browse() {
                 <Pressable onPress={() => router.push(`/note/${r.c.nid}`)} onLongPress={() => (haptic.firm(), actions(item))} accessibilityRole="button" accessibilityLabel={r.front}>
                   {({ pressed }) => (
                     <>
-                      <Surface radius={20} strong style={[styles.thumb, { opacity: susp ? 0.45 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] }]}>
+                      <Surface radius={20} content style={[styles.thumb, { opacity: susp ? 0.45 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] }]}>
                         <T v="headline" numberOfLines={3} style={{ textAlign: 'center' }}>
                           {r.front || '—'}
                         </T>
