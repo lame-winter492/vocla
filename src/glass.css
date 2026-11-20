@@ -184,7 +184,7 @@ html[data-design="glass"] .modal-bg { background: var(--overlay); }
 html[data-design="glass"] .toast { background: var(--glass-strong); color: var(--fg); border-radius: 999px; padding: 12px 20px; font-weight: 500; }
 
 /* ---------- review ---------- */
-html[data-design="glass"] .reviewer { background: var(--bg); }
+html[data-design="glass"] .reviewer { background: transparent; } /* the soft light behind the page shows through */
 html[data-design="glass"] .review-head { gap: 10px; }
 html[data-design="glass"] .review-head button.icon { color: var(--fg); font-size: 17px; }
 html[data-design="glass"] .progress { height: 6px; border-radius: 3px; background: var(--pill); }

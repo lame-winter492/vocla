@@ -11,6 +11,7 @@ import "./springs.css";
 import "./style.css";
 import "./glass.css";
 import "./patterns.css";
+import "./looks.css";
 import "./motion.css";
 import { initNative, onAppBackground } from "./lib/native";
 import { installInteractiveGlass, installTapThrough } from "./ui/motion";
@@ -24,8 +25,8 @@ import { installInteractiveGlass, installTapThrough } from "./ui/motion";
   speechSynthesis.speak(u);
 };
 
-// lets the iOS preview page switch designs from outside the React tree
-(window as any).voclaSetDesign = (d: "focus" | "glass") => store.mutate((c) => (c.d.prefs.design = d));
+// lets the iOS preview page switch looks from outside the React tree
+(window as any).voclaSetLook = (l: "liquid" | "frosted") => store.mutate((c) => (c.d.prefs.look = l));
 
 installInteractiveGlass();
 installTapThrough();

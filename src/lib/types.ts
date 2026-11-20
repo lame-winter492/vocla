@@ -178,14 +178,14 @@ export interface Prefs {
   lastAddDeck: ID;
   targetLang: string; // BCP-47 language used by {{tts auto:Field}}
   haptics: boolean;
-  /** UI design: "focus" (dark, Vocla's own) or "glass" (Liquid Glass, like a stock iOS app). Unset = app default. */
+  /** @deprecated replaced by `look` (the Focus design was removed) */
   design?: "focus" | "glass";
   /** Solid instead of translucent glass (Safari doesn't expose the system Reduce Transparency setting). */
   reduceTransparency?: boolean;
   /** Browse: a list (Anki's table) or icons (a grid of card thumbnails, like Files / Safari's tab overview) */
   browserView?: "list" | "icons";
-  /** Native app look: Liquid Glass (iOS 26) or the frosted materials of earlier iOS. Unset = Liquid Glass. */
-  nativeLook?: "liquid" | "frosted";
+  /** Look (web and native): Liquid Glass (iOS 26) or the frosted materials of earlier iOS. Unset = Liquid Glass. */
+  look?: "liquid" | "frosted";
 }
 
 export interface Collection {

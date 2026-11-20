@@ -108,7 +108,7 @@ export function makeTheme(look: Look, dark: boolean): Theme {
 export function useTheme(): Theme {
   const col = useCol();
   const scheme = useColorScheme();
-  return makeTheme(currentLook(col.d.prefs.nativeLook), scheme === 'dark');
+  return makeTheme(currentLook(col.d.prefs.look), scheme === 'dark');
 }
 
 /** Font weight for navigation-bar titles (they accept nothing else). */

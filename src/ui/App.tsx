@@ -15,7 +15,7 @@ import { Overview } from "./Overview";
 import { Prefs } from "./Prefs";
 import { Stats } from "./Stats";
 import { Study } from "./Study";
-import { currentDesign, phoneLayout, transition, type NavKind } from "./motion";
+import { currentLook, phoneLayout, transition, type NavKind } from "./motion";
 import { TAB_ICONS } from "./icons";
 
 // ---------- navigation model (drives iOS-style transitions and the back button) ----------
@@ -52,7 +52,9 @@ function kindFor(from: Route, to: Route): NavKind {
 
 export function App() {
   const col = useCol();
-  document.documentElement.dataset.design = currentDesign(col.d.prefs.design);
+  // one design (iOS), in two materials: Liquid Glass or Frosted
+  document.documentElement.dataset.design = "glass";
+  document.documentElement.dataset.look = currentLook(col.d.prefs.look);
   document.documentElement.classList.toggle("solid-glass", !!col.d.prefs.reduceTransparency);
 
   // Liquid Glass: the tab bar shrinks while scrolling down and comes back when scrolling up (iOS 26)

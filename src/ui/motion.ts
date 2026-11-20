@@ -202,9 +202,9 @@ export function longPress(onFire: (x: number, y: number) => void, ms = 480) {
   };
 }
 
-/** Which design to show: the saved preference, else a page-level default (the iOS preview sets one), else Focus. */
-export function currentDesign(pref?: "focus" | "glass"): "focus" | "glass" {
-  return pref ?? ((window as unknown as { __voclaDefaultDesign?: "focus" | "glass" }).__voclaDefaultDesign ?? "focus");
+/** Which look to show: Liquid Glass unless Frosted was chosen. */
+export function currentLook(pref?: "liquid" | "frosted"): "liquid" | "frosted" {
+  return pref ?? "liquid";
 }
 
 /** Phone layout: a narrow screen, or the iOS preview page (an iPhone frame shown on a desktop browser). */

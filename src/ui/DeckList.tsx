@@ -7,7 +7,7 @@ import { dayNumber, formatIvlSecs } from "../lib/time";
 import { askConfirm, askText } from "./dialog";
 import { useNav } from "./nav";
 import { haptic } from "./haptics";
-import { currentDesign, longPress } from "./motion";
+import { longPress } from "./motion";
 import { RollingNumber } from "./RollingNumber";
 import { GLYPH, Monogram } from "./icons";
 
@@ -59,7 +59,7 @@ export function DeckList() {
   const nextLesson = courseRows[0] ?? null;
 
   // Liquid Glass: the hero is an App Store "Today" card that shrinks under the finger and expands into the session
-  const glass = currentDesign(col.d.prefs.design) === "glass";
+  const glass = true; // the App Store-style Today card (both looks)
   const heroAction: (() => void) | null =
     total > 0
       ? () => go({ name: "study", did: ALL_DECKS })

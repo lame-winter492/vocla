@@ -29,7 +29,7 @@ export default function Settings() {
   const col = useCol();
   const t = useTheme();
   const prefs = col.d.prefs;
-  const look = currentLook(prefs.nativeLook);
+  const look = currentLook(prefs.look);
   const set = (fn: () => void) => store.mutate(fn);
 
   // each option is a live sample of its material over the same soft light the app uses
@@ -37,7 +37,7 @@ export default function Settings() {
     <PressScale
       onPress={() => {
         haptic.select();
-        set(() => (prefs.nativeLook = l));
+        set(() => (prefs.look = l));
       }}
       accessibilityRole="radio"
       accessibilityState={{ checked: look === l }}

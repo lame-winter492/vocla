@@ -1,7 +1,7 @@
 import { askConfirm, showMessage } from "./dialog";
 import { store, useCol } from "../lib/store";
 import { useNav } from "./nav";
-import { currentDesign } from "./motion";
+import { currentLook } from "./motion";
 
 export function Prefs() {
   const col = useCol();
@@ -27,13 +27,14 @@ export function Prefs() {
       <fieldset>
         <legend>Appearance</legend>
         <label>
-          <input type="radio" name="design" checked={currentDesign(p.design) === "focus"} onChange={() => set(() => (p.design = "focus"))} /> Focus: dark,
-          one big next step
+          <input type="radio" name="look" checked={currentLook(p.look) === "liquid"} onChange={() => set(() => (p.look = "liquid"))} /> Liquid
+          Glass: clear glass that bends and lights up what is behind it (iOS 26)
         </label>
         <label>
-          <input type="radio" name="design" checked={currentDesign(p.design) === "glass"} onChange={() => set(() => (p.design = "glass"))} /> Liquid
-          Glass: like a built-in iOS app, follows light/dark mode
+          <input type="radio" name="look" checked={currentLook(p.look) === "frosted"} onChange={() => set(() => (p.look = "frosted"))} /> Frosted: the
+          soft, thicker blur of earlier iOS
         </label>
+        <div className="small muted">Both follow your light or dark appearance.</div>
         <label>
           <input
             type="checkbox"
