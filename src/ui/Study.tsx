@@ -78,7 +78,8 @@ export function Study({ did }: { did: ID }) {
     }
   };
   const onPointerDown = (e: React.PointerEvent) => {
-    if (!showAnswer || e.pointerType === "mouse") return;
+    // mouse drags only count in the iOS preview (an iPhone frame shown on desktop)
+    if (!showAnswer || (e.pointerType === "mouse" && !document.documentElement.classList.contains("ios-preview"))) return;
     drag.current = { x: e.clientX, y: e.clientY, dx: 0, active: false };
   };
   const onPointerMove = (e: React.PointerEvent) => {
