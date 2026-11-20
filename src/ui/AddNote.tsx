@@ -43,7 +43,7 @@ export function AddNote({ did: initialDid }: { did?: ID }) {
     }
     setHistory((h) => [note.id || Date.now(), ...h].slice(0, 20));
     setNote({ ...col.newNote(nt), tags: note.tags });
-    toast(`Added (${n} card${n > 1 ? "s" : ""}).`);
+    toast(`Added ${n} card${n === 1 ? "" : "s"}`);
   };
 
   return (

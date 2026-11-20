@@ -10,9 +10,10 @@ import "@fontsource/geist-mono/500.css";
 import "./springs.css";
 import "./style.css";
 import "./glass.css";
+import "./patterns.css";
 import "./motion.css";
 import { initNative, onAppBackground } from "./lib/native";
-import { installInteractiveGlass } from "./ui/motion";
+import { installInteractiveGlass, installTapThrough } from "./ui/motion";
 
 // TTS helper available to card templates ({{tts en_US:Field}})
 (window as any).voclaSpeak = (text: string, lang: string) => {
@@ -27,6 +28,7 @@ import { installInteractiveGlass } from "./ui/motion";
 (window as any).voclaSetDesign = (d: "focus" | "glass") => store.mutate((c) => (c.d.prefs.design = d));
 
 installInteractiveGlass();
+installTapThrough();
 
 store.load().then(() => {
   createRoot(document.getElementById("root")!).render(<App />);

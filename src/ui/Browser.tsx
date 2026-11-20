@@ -10,6 +10,11 @@ import { CardView } from "./CardView";
 import { Modal } from "./Modal";
 import { useNav } from "./nav";
 import { NoteEditor } from "./NoteEditor";
+import { GLYPH, hueOf, Monogram } from "./icons";
+import { phoneLayout as phone, transition } from "./motion";
+
+// flag colours, as the coloured tag dots in Files
+const FLAG_COLORS = ["", "#ff3b30", "#ff9500", "#34c759", "#007aff", "#ff2d55", "#30b0c7", "#af52de"];
 
 type Mode = "cards" | "notes";
 type ColKey = "sort" | "card" | "deck" | "due" | "ivl" | "ease" | "reps" | "lapses" | "created" | "notetype" | "tags" | "cards" | "edited";
@@ -43,6 +48,35 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
   const anchor = useRef<ID | null>(null);
   const [draft, setDraft] = useState<Note | null>(null);
   const [modal, setModal] = useState<null | "info" | "preview" | "findreplace" | "changent" | "deck" | "reposition">(null);
+  const view = col.d.prefs.browserView ?? "list";
+  const [viewMenu, setViewMenu] = useState(false);
+  const viewMenuRef = useRef<HTMLDivElement>(null);
+  // sidebar sections fold like the sections in Files' Browse screen (on phones most start folded)
+  const [folded, setFolded] = useState<Set<string>>(() => new Set(phone() ? ["Saved Searches", "Card State", "Flags", "Note Types", "Tags"] : []));
+  const toggleSection = (name: string) =>
+    setFolded((f) => {
+      const n = new Set(f);
+      if (n.has(name)) n.delete(name);
+      else n.add(name);
+      return n;
+    });
+
+  // a pull-down menu closes when you tap anywhere else
+  useEffect(() => {
+    if (!viewMenu) return;
+    const close = (e: PointerEvent) => !viewMenuRef.current?.contains(e.target as Node) && setViewMenu(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setViewMenu(false);
+    document.addEventListener("pointerdown", close, true);
+    window.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", close, true);
+      window.removeEventListener("keydown", esc);
+    };
+  }, [viewMenu]);
+  const setView = (v: "list" | "icons") => {
+    setViewMenu(false);
+    if (v !== view) transition("tab", () => store.mutate((c) => (c.d.prefs.browserView = v)));
+  };
 
   useEffect(() => {
     if (initialQuery !== undefined) {
@@ -234,53 +268,79 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
 
   const cols = mode === "cards" ? CARD_COLS : NOTE_COLS;
 
-  const sidebarItem = (label: string, q: string, indent = 0) => (
-    <div key={label + q} style={{ paddingLeft: indent * 10 }} onClick={() => search(q)} title={q}>
-      {label}
+  const sidebarItem = (label: string, q: string, indent = 0, icon?: React.ReactNode) => (
+    <div key={label + q} className={`side-item${query === q ? " on" : ""}`} style={{ paddingLeft: 8 + indent * 12 }} onClick={() => search(q)} title={q}>
+      {icon}
+      <span className="side-label">{label}</span>
     </div>
   );
+  // a foldable sidebar section with a chevron that turns (Files)
+  const section = (name: string, items: React.ReactNode[]) => {
+    if (items.length === 0) return null;
+    const open = !folded.has(name);
+    return (
+      <div className={`side-section${open ? " open" : ""}`} key={name}>
+        <button className="side-head" aria-expanded={open} onClick={() => toggleSection(name)}>
+          {name}
+          {GLYPH.chevron}
+        </button>
+        <div className="side-items">
+          <div>{items}</div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="page wide browser">
+      <h2 className="browse-title">Browse</h2>
       <div className="sidebar">
-        <b>Saved Searches</b>
-        {Object.entries(col.d.savedSearches).map(([name, q]) => (
-          <div key={name} className="row" style={{ gap: 4 }}>
-            <span onClick={() => search(q)} style={{ flex: 1 }}>
-              {name}
-            </span>
-            <a
-              className="small"
-              onClick={() => store.update("Delete Saved Search", (c) => delete c.d.savedSearches[name])}
-              title="Delete"
-            >
-              ×
-            </a>
-          </div>
-        ))}
-        <b>Today</b>
-        {sidebarItem("Added Today", "added:1")}
-        {sidebarItem("Studied Today", "rated:1")}
-        {sidebarItem("Again Today", "rated:1:1")}
-        <b>Card State</b>
-        {sidebarItem("New", "is:new")}
-        {sidebarItem("Learning", "is:learn")}
-        {sidebarItem("Review", "is:review")}
-        {sidebarItem("Due", "is:due")}
-        {sidebarItem("Suspended", "is:suspended")}
-        {sidebarItem("Buried", "is:buried")}
-        {sidebarItem("Marked", "tag:marked")}
-        {sidebarItem("Leech", "tag:leech")}
-        <b>Flags</b>
-        {[1, 2, 3, 4, 5, 6, 7].map((f) => sidebarItem(`Flag ${f}`, `flag:${f}`))}
-        <b>Decks</b>
-        {sidebarItem("All", "deck:*")}
-        {col.decks().map((d) => sidebarItem(d.name.split("::").pop()!, `"deck:${d.name}"`, d.name.split("::").length - 1))}
-        <b>Note Types</b>
-        {col.notetypes().map((nt) => sidebarItem(nt.name, `"note:${nt.name}"`))}
-        <b>Tags</b>
-        {sidebarItem("(untagged)", "tag:none")}
-        {col.allTags().map((t) => sidebarItem(t, `"tag:${t}"`))}
+        {section(
+          "Saved Searches",
+          Object.entries(col.d.savedSearches).map(([name, q]) => (
+            <div key={name} className={`side-item${query === q ? " on" : ""}`} onClick={() => search(q)} title={q}>
+              <span className="side-label">{name}</span>
+              <a
+                className="small side-x"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  store.update("Delete Saved Search", (c) => delete c.d.savedSearches[name]);
+                }}
+                title="Delete"
+              >
+                ×
+              </a>
+            </div>
+          )),
+        )}
+        {section("Today", [sidebarItem("Added Today", "added:1"), sidebarItem("Studied Today", "rated:1"), sidebarItem("Again Today", "rated:1:1")])}
+        {section("Card State", [
+          sidebarItem("New", "is:new"),
+          sidebarItem("Learning", "is:learn"),
+          sidebarItem("Review", "is:review"),
+          sidebarItem("Due", "is:due"),
+          sidebarItem("Suspended", "is:suspended"),
+          sidebarItem("Buried", "is:buried"),
+          sidebarItem("Marked", "tag:marked"),
+          sidebarItem("Leech", "tag:leech"),
+        ])}
+        {section(
+          "Flags",
+          [1, 2, 3, 4, 5, 6, 7].map((f) => sidebarItem(`Flag ${f}`, `flag:${f}`, 0, <i className="dot" style={{ background: FLAG_COLORS[f] }} />)),
+        )}
+        {section("Decks", [
+          sidebarItem("All", "deck:*"),
+          ...col.decks().map((d) => {
+            const leaf = d.name.split("::").pop()!;
+            const depth = d.name.split("::").length - 1;
+            return sidebarItem(leaf, `"deck:${d.name}"`, depth, <Monogram name={leaf} size="sm" />);
+          }),
+        ])}
+        {section("Note Types", col.notetypes().map((nt) => sidebarItem(nt.name, `"note:${nt.name}"`)))}
+        {section("Tags", [
+          sidebarItem("(untagged)", "tag:none"),
+          ...col.allTags().map((t) => sidebarItem(t, `"tag:${t}"`, 0, <i className="dot" style={{ background: `hsl(${hueOf(t)} 65% 55%)` }} />)),
+        ])}
       </div>
 
       <div>
@@ -313,6 +373,70 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
             <option value="cards">Cards</option>
             <option value="notes">Notes</option>
           </select>
+          <div className="view-menu-anchor" ref={viewMenuRef}>
+            <button className="icon view-btn" aria-label="View options" aria-haspopup="menu" aria-expanded={viewMenu} onClick={() => setViewMenu(!viewMenu)}>
+              {GLYPH.more}
+            </button>
+            {viewMenu && (
+              // Files-style pull-down: view switch on top, then sort with a checkmark and the direction
+              <div className="menu view-menu" role="menu">
+                <div className="seg" role="group" aria-label="View as">
+                  <button role="menuitemradio" aria-checked={view === "icons"} className={view === "icons" ? "on" : ""} onClick={() => setView("icons")}>
+                    {GLYPH.grid}
+                    <span>Icons</span>
+                  </button>
+                  <button role="menuitemradio" aria-checked={view === "list"} className={view === "list" ? "on" : ""} onClick={() => setView("list")}>
+                    {GLYPH.list}
+                    <span>List</span>
+                  </button>
+                </div>
+                <hr />
+                <div className="menu-title">Sort by</div>
+                {cols.map((k) => (
+                  <button
+                    key={k}
+                    role="menuitemradio"
+                    aria-checked={sort.key === k}
+                    className="radio"
+                    onClick={() => {
+                      setSort((s) => ({ key: k, desc: s.key === k ? !s.desc : false }));
+                      setViewMenu(false);
+                    }}
+                  >
+                    <span className="lead">{sort.key === k && GLYPH.check}</span>
+                    <span className="grow">{COL_NAMES[k]}</span>
+                    {sort.key === k && (sort.desc ? GLYPH.down : GLYPH.up)}
+                  </button>
+                ))}
+                <hr />
+                {(["cards", "notes"] as Mode[]).map((m) => (
+                  <button
+                    key={m}
+                    role="menuitemradio"
+                    aria-checked={mode === m}
+                    className="radio"
+                    onClick={() => {
+                      setMode(m);
+                      setSelected(new Set());
+                      setViewMenu(false);
+                    }}
+                  >
+                    <span className="lead">{mode === m && GLYPH.check}</span>
+                    <span className="grow">{m === "cards" ? "Cards" : "Notes"}</span>
+                  </button>
+                ))}
+                <hr />
+                <button
+                  onClick={() => {
+                    setSelected(new Set(rows));
+                    setViewMenu(false);
+                  }}
+                >
+                  Select All {GLYPH.select}
+                </button>
+              </div>
+            )}
+          </div>
           <span className="muted">
             {rows.length} {mode} shown, {selected.size} selected
           </span>
@@ -399,38 +523,67 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
           </button>
         </div>
 
-        <div className="tablewrap">
-          <table>
-            <thead>
-              <tr>
-                {cols.map((k) => (
-                  <th key={k} onClick={() => setSort((s) => ({ key: k, desc: s.key === k ? !s.desc : false }))}>
-                    {COL_NAMES[k]}
-                    {sort.key === k ? (sort.desc ? " ▼" : " ▲") : ""}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.slice(0, 2000).map((id) => {
-                const card = mode === "cards" ? col.d.cards[id] : undefined;
-                const cls = [
-                  selected.has(id) ? "sel" : "",
-                  card && card.queue === Queue.Suspended ? "susp" : "",
-                  card && card.flags && !selected.has(id) ? `flag${card.flags}` : "",
-                ].join(" ");
-                return (
-                  <tr key={id} className={cls} onMouseDown={(e) => clickRow(id, e)}>
-                    {cols.map((k) => (
-                      <td key={k}>{cell(id, k)}</td>
-                    ))}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {rows.length > 2000 && <div className="muted small">Showing first 2000 rows. Refine your search.</div>}
-        </div>
+        {view === "icons" ? (
+          // icons: rounded thumbnails of each card's front, name and details below (Files icons / Safari tab overview)
+          <div className="tablewrap tile-grid" role="listbox" aria-multiselectable="true" aria-label={mode}>
+            {rows.slice(0, 400).map((id) => {
+              const card = mode === "cards" ? col.d.cards[id] : col.cardsOfNote(id)[0];
+              const front = cell(id, "sort");
+              const sel = selected.has(id);
+              return (
+                <div
+                  key={id}
+                  role="option"
+                  aria-selected={sel}
+                  className={`tile-card${sel ? " sel" : ""}${card && card.queue === Queue.Suspended ? " susp" : ""}`}
+                  onMouseDown={(e) => clickRow(id, e)}
+                >
+                  <div className="thumb">
+                    <span>{front || "—"}</span>
+                    {card && card.flags > 0 && <i className="dot flag-dot" style={{ background: FLAG_COLORS[card.flags] }} />}
+                    {sel && <span className="sel-badge">{GLYPH.check}</span>}
+                  </div>
+                  <div className="tile-name">{mode === "cards" ? cell(id, "card") : cell(id, "notetype")}</div>
+                  <div className="tile-meta">{mode === "cards" ? `${cell(id, "deck").split("::").pop()} · ${cell(id, "due")}` : `${cell(id, "cards")} cards · ${cell(id, "created")}`}</div>
+                </div>
+              );
+            })}
+            {rows.length > 400 && <div className="muted small tile-more">Showing the first 400. Refine your search.</div>}
+          </div>
+        ) : (
+          <div className="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  {cols.map((k) => (
+                    <th key={k} onClick={() => setSort((s) => ({ key: k, desc: s.key === k ? !s.desc : false }))}>
+                      {COL_NAMES[k]}
+                      {sort.key === k ? (sort.desc ? " ▼" : " ▲") : ""}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.slice(0, 2000).map((id) => {
+                  const card = mode === "cards" ? col.d.cards[id] : undefined;
+                  const cls = [
+                    selected.has(id) ? "sel" : "",
+                    card && card.queue === Queue.Suspended ? "susp" : "",
+                    card && card.flags && !selected.has(id) ? `flag${card.flags}` : "",
+                  ].join(" ");
+                  return (
+                    <tr key={id} className={cls} onMouseDown={(e) => clickRow(id, e)}>
+                      {cols.map((k) => (
+                        <td key={k}>{cell(id, k)}</td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {rows.length > 2000 && <div className="muted small">Showing first 2000 rows. Refine your search.</div>}
+          </div>
+        )}
 
         {draft && col.d.notetypes[draft.ntid] && (
           <div className="panel editpane">

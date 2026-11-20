@@ -7,8 +7,9 @@ import { dayNumber, formatIvlSecs } from "../lib/time";
 import { askConfirm, askText } from "./dialog";
 import { useNav } from "./nav";
 import { haptic } from "./haptics";
-import { longPress } from "./motion";
+import { currentDesign, longPress } from "./motion";
 import { RollingNumber } from "./RollingNumber";
+import { GLYPH, Monogram } from "./icons";
 
 // the number shown last time, so returning to Today rolls from the old count to the new one
 let lastShownTotal: number | null = null;
@@ -48,16 +49,26 @@ export function DeckList() {
   const weekday = new Date().toLocaleDateString(undefined, { weekday: "long" });
   const nextLearn = col.nextLearnDue(ALL_DECKS);
 
-  // the next course lesson to continue, if any
-  const nextLesson = (() => {
-    for (const c of Object.values(col.d.courses)) {
-      const lessons = allLessons(c);
-      const done = lessons.filter((l) => col.d.courseProgress.lessons[c.id]?.[l.id]).length;
-      const next = lessons.find((l) => !col.d.courseProgress.lessons[c.id]?.[l.id] && isUnlocked(c, col.d.courseProgress, l.id));
-      if (next) return { course: c, lesson: next, done, total: lessons.length };
-    }
-    return null;
-  })();
+  // courses with a lesson to do next (App Store-style rows below the decks); the first one can fill the hero
+  const courseRows = Object.values(col.d.courses).flatMap((c) => {
+    const lessons = allLessons(c);
+    const done = lessons.filter((l) => col.d.courseProgress.lessons[c.id]?.[l.id]).length;
+    const next = lessons.find((l) => !col.d.courseProgress.lessons[c.id]?.[l.id] && isUnlocked(c, col.d.courseProgress, l.id));
+    return next ? [{ course: c, lesson: next, done, total: lessons.length }] : [];
+  });
+  const nextLesson = courseRows[0] ?? null;
+
+  // Liquid Glass: the hero is an App Store "Today" card that shrinks under the finger and expands into the session
+  const glass = currentDesign(col.d.prefs.design) === "glass";
+  const heroAction: (() => void) | null =
+    total > 0
+      ? () => go({ name: "study", did: ALL_DECKS })
+      : nextLesson
+        ? () => go({ name: "lesson", courseId: nextLesson.course.id, lessonId: nextLesson.lesson.id })
+        : null;
+  const storyCard = glass && heroAction !== null;
+  const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  const ring = doneToday + total > 0 ? doneToday / (doneToday + total) : 0;
 
   const createDeck = async () => {
     const name = await askText("New deck name (use :: for subdecks):");
@@ -97,6 +108,7 @@ export function DeckList() {
             ) : (
               <span className="twisty" />
             )}
+            <Monogram name={n.name} size={n.depth ? "sm" : undefined} />
             <a
               onClick={() => {
                 store.mutate((c) => (c.d.prefs.currentDeck = d.id));
@@ -116,7 +128,9 @@ export function DeckList() {
             </button>
             {menu === d.id && (
               <div className="menu" onMouseLeave={() => !lifted && setMenu(null)}>
-                <button onClick={() => go({ name: "overview", did: d.id })}>Open</button>
+                <button onClick={() => go({ name: "overview", did: d.id })}>
+                  Open {GLYPH.open}
+                </button>
                 <button
                   onClick={async () => {
                     closeMenu();
@@ -129,10 +143,14 @@ export function DeckList() {
                       }
                   }}
                 >
-                  Rename
+                  Rename {GLYPH.rename}
                 </button>
-                <button onClick={() => go(d.dyn ? { name: "filtered", did: d.id } : { name: "options", did: d.id })}>Options</button>
-                <button onClick={() => go({ name: "export", did: d.id })}>Export</button>
+                <button onClick={() => go(d.dyn ? { name: "filtered", did: d.id } : { name: "options", did: d.id })}>
+                  Options {GLYPH.options}
+                </button>
+                <button onClick={() => go({ name: "export", did: d.id })}>
+                  Export {GLYPH.export}
+                </button>
                 <hr />
                 <button
                   className="danger"
@@ -147,7 +165,7 @@ export function DeckList() {
                     }
                   }}
                 >
-                  Delete
+                  Delete {GLYPH.trash}
                 </button>
               </div>
             )}
@@ -162,12 +180,36 @@ export function DeckList() {
   return (
     <div className="page today">
       {lifted && <div className="context-scrim" onClick={closeMenu} onContextMenu={(e) => (e.preventDefault(), closeMenu())} />}
-      <h1 className="large-title">Today</h1>
-      <section className="hero" aria-label="Today">
-        <div className="muted">
-          {weekday}
-          {days > 0 && ` · ${days}-day streak`}
-          {doneToday > 0 && ` · ${doneToday} done`}
+      {/* App Store-style header: date above the large title, account-style button on the trailing edge */}
+      <header className="title-row">
+        <div className="eyebrow">{dateLabel}</div>
+        <h1 className="large-title">Today</h1>
+        <button
+          className="streak-ring"
+          style={{ ["--p" as string]: ring }}
+          aria-label={`${days}-day streak, ${doneToday} reviewed today. Statistics`}
+          onClick={() => go({ name: "stats" })}
+        >
+          <svg viewBox="0 0 40 40" aria-hidden="true">
+            <circle className="track" cx="20" cy="20" r="17" pathLength={1} />
+            <circle className="fill" cx="20" cy="20" r="17" pathLength={1} />
+          </svg>
+          <span>{days}</span>
+        </button>
+      </header>
+      <section
+        className={`hero${storyCard ? " story hero-cta" : ""}`}
+        aria-label="Today"
+        onClick={(e) => {
+          // the whole card is the button (App Store Today cards); inner buttons keep their own action
+          if (storyCard && heroAction && !(e.target as HTMLElement).closest("button, a")) heroAction();
+        }}
+      >
+        {glass && <div className="story-eyebrow">{total > 0 ? "Daily review" : nextLesson ? "Continue learning" : "All caught up"}</div>}
+        <div className="muted hero-meta">
+          <span className="hero-weekday">{weekday}</span>
+          {days > 0 && <span>{days}-day streak</span>}
+          {doneToday > 0 && <span>{doneToday} done</span>}
         </div>
         {total > 0 ? (
           <>
@@ -180,11 +222,7 @@ export function DeckList() {
             <div className="breakdown">
               {all.reviewCount} due · {all.learnCount} learning · {all.newCount} new · about {minutes} min
             </div>
-            <button
-              className="primary big hero-cta"
-              autoFocus
-              onClick={() => go({ name: "study", did: ALL_DECKS })}
-            >
+            <button className={`primary big${storyCard ? "" : " hero-cta"}`} autoFocus onClick={heroAction!}>
               Start session →
             </button>
           </>
@@ -198,10 +236,7 @@ export function DeckList() {
               {nextLearn ? `Next learning card in ${formatIvlSecs(Math.max(0, (nextLearn - Date.now()) / 1000), false)}.` : "You're done for today."}
             </div>
             {nextLesson ? (
-              <button
-                className="primary big hero-cta"
-                onClick={() => go({ name: "lesson", courseId: nextLesson.course.id, lessonId: nextLesson.lesson.id })}
-              >
+              <button className={`primary big${storyCard ? "" : " hero-cta"}`} onClick={heroAction!}>
                 Continue course →
               </button>
             ) : (
@@ -217,26 +252,8 @@ export function DeckList() {
         <div className="section-label">Decks</div>
         <table className="decklist">
           <tbody>{rows}</tbody>
-          {nextLesson && (
-            <tbody>
-              <tr>
-                <td>
-                  <span className="twisty" />
-                  <a className="deck-name" onClick={() => go({ name: "lesson", courseId: nextLesson.course.id, lessonId: nextLesson.lesson.id })}>
-                    {nextLesson.course.title}
-                  </a>
-                  <span className="muted"> · next: {nextLesson.lesson.title}</span>
-                </td>
-                <td className="num" style={{ color: "var(--accent)" }}>
-                  {nextLesson.done}/{nextLesson.total}
-                </td>
-                <td className="num muted">course</td>
-                <td />
-              </tr>
-            </tbody>
-          )}
         </table>
-        <div className="row" style={{ marginTop: 16 }}>
+        <div className="row deck-actions">
           <button className="ghost" onClick={createDeck}>
             + New deck
           </button>
@@ -248,6 +265,31 @@ export function DeckList() {
           </button>
         </div>
       </section>
+
+      {courseRows.length > 0 && (
+        <section className="shelf" aria-label="Courses">
+          <div className="shelf-head">
+            <h2>Courses</h2>
+            <a onClick={() => go({ name: "courses" })}>See All</a>
+          </div>
+          <ul className="app-rows">
+            {courseRows.map((r) => (
+              <li key={r.course.id} className="app-row">
+                <Monogram name={r.course.title} text={r.course.targetLang.slice(0, 2)} size="lg" />
+                <a className="app-text" onClick={() => go({ name: "course", id: r.course.id })}>
+                  <span className="app-title">{r.course.title}</span>
+                  <span className="app-sub">
+                    Next: {r.lesson.title} · {r.done}/{r.total}
+                  </span>
+                </a>
+                <button className="get" onClick={() => go({ name: "lesson", courseId: r.course.id, lessonId: r.lesson.id })} aria-label={`${r.done ? "Resume" : "Start"} ${r.course.title}`}>
+                  {r.done ? "Resume" : "Start"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

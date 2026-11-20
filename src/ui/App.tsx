@@ -15,7 +15,7 @@ import { Overview } from "./Overview";
 import { Prefs } from "./Prefs";
 import { Stats } from "./Stats";
 import { Study } from "./Study";
-import { transition, type NavKind } from "./motion";
+import { currentDesign, phoneLayout, transition, type NavKind } from "./motion";
 
 // ---------- navigation model (drives iOS-style transitions and the back button) ----------
 type Name = Route["name"];
@@ -34,6 +34,11 @@ const TITLES: Partial<Record<Name, string>> = {
   filtered: "Filtered Deck", custom: "Custom Study", notetypes: "Note Types", import: "Import", export: "Export", prefs: "Preferences",
 };
 
+/** The tab bar minimizes while scrolling only in Liquid Glass at phone width (iOS 26 behaviour). */
+function tabBarCanMinimize(): boolean {
+  return document.documentElement.dataset.design === "glass" && phoneLayout();
+}
+
 function kindFor(from: Route, to: Route): NavKind {
   if (to.name === "add" && from.name !== "add") return "sheet";
   if (from.name === "add" && to.name !== "add") return "unsheet";
@@ -43,10 +48,6 @@ function kindFor(from: Route, to: Route): NavKind {
   return DEPTH[to.name] >= DEPTH[from.name] ? "push" : "pop";
 }
 
-/** Which design to show: the saved preference, else a page-level default (the iOS preview sets one), else Focus. */
-export function currentDesign(pref?: "focus" | "glass"): "focus" | "glass" {
-  return pref ?? ((window as unknown as { __voclaDefaultDesign?: "focus" | "glass" }).__voclaDefaultDesign ?? "focus");
-}
 
 export function App() {
   const col = useCol();
@@ -60,8 +61,9 @@ export function App() {
       const t = e.target as HTMLElement | Document;
       const top = t instanceof Document ? window.scrollY : t.scrollTop;
       const root = document.documentElement;
-      if (top > 80 && top - last > 4) root.classList.add("tabs-min");
-      else if (top - last < -4 || top <= 80) root.classList.remove("tabs-min");
+      // only the floating Liquid Glass tab bar on phones minimizes; elsewhere it would just swallow a click
+      if (top > 80 && top - last > 4 && tabBarCanMinimize()) root.classList.add("tabs-min");
+      else if (top - last < -4 || top <= 80 || !tabBarCanMinimize()) root.classList.remove("tabs-min");
       // scroll edge effect under the top bar, and the large title collapsing into the bar
       root.classList.toggle("scrolled", top > 4);
       root.classList.toggle("title-collapsed", top > 52);
@@ -146,6 +148,8 @@ export function App() {
     const rail = railRef.current;
     const drop = dropRef.current;
     if (!rail || !drop) return;
+    // while minimized only the current tab shows; measure again once the bar is back to full size
+    if (document.documentElement.classList.contains("tabs-min")) return;
     const on = rail.querySelector<HTMLElement>(".rail-item.on");
     if (!on) {
       drop.style.opacity = "0";
@@ -173,11 +177,15 @@ export function App() {
     placeDroplet(lastSection.current !== null && lastSection.current !== sec);
     lastSection.current = sec;
   });
+  // follow the tab bar's size: window resizes, and the bar growing back after being minimized (every frame of it)
+  const railShown = route.name !== "study" && route.name !== "lesson";
   useEffect(() => {
-    const onResize = () => placeDroplet(false);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [placeDroplet]);
+    const rail = railRef.current;
+    if (!rail || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => placeDroplet(false));
+    ro.observe(rail);
+    return () => ro.disconnect();
+  }, [placeDroplet, railShown]);
 
   // iOS back button for screens deeper than a tab's root
   const backTo: Route | null = (() => {
@@ -270,7 +278,7 @@ export function App() {
             onClickCapture={(e) => {
               // tapping the minimized tab bar expands it first (iOS 26)
               const root = document.documentElement;
-              if (root.classList.contains("tabs-min")) {
+              if (root.classList.contains("tabs-min") && tabBarCanMinimize()) {
                 root.classList.remove("tabs-min");
                 e.stopPropagation();
                 e.preventDefault();
@@ -329,26 +337,30 @@ export function App() {
               <div className="topbar-title" aria-hidden="true">
                 {titleFor(route)}
               </div>
-              <button className="searchbtn" aria-label="Search cards" onClick={() => go({ name: "browse" })}>
-                {ICONS.search}
-                <span className="label">Search cards</span>
-                <span className="kbd">B</span>
-              </button>
-              <button
-                className="icon"
-                aria-label="Undo"
-                title={store.undoLabel() ? `Undo ${store.undoLabel()} (Ctrl+Z)` : "Nothing to undo"}
-                disabled={!store.undoLabel()}
-                onClick={() => {
-                  const l = store.undo();
-                  if (l) toast(`Undo: ${l}`);
-                }}
-              >
-                {ICONS.undo}
-              </button>
-              <button onClick={() => go({ name: "add" })} aria-label="Add card">
-                + Add
-              </button>
+              {/* Liquid Glass groups related toolbar buttons on one shared capsule */}
+              <div className="toolbar-group">
+                <button className="searchbtn" aria-label="Search cards" onClick={() => go({ name: "browse" })}>
+                  {ICONS.search}
+                  <span className="label">Search cards</span>
+                  <span className="kbd">B</span>
+                </button>
+                <button
+                  className="icon"
+                  aria-label="Undo"
+                  title={store.undoLabel() ? `Undo ${store.undoLabel()} (Ctrl+Z)` : "Nothing to undo"}
+                  disabled={!store.undoLabel()}
+                  onClick={() => {
+                    const l = store.undo();
+                    if (l) toast(`Undo: ${l}`);
+                  }}
+                >
+                  {ICONS.undo}
+                </button>
+                <button className="addbtn" onClick={() => go({ name: "add" })} aria-label="Add card">
+                  {ICONS.plus}
+                  <span className="add-label">Add</span>
+                </button>
+              </div>
             </header>
             {page}
           </div>
@@ -399,4 +411,5 @@ const ICONS = {
   ),
   undo: svg(<path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3" />),
   back: svg(<path d="M15 5l-7 7 7 7" />),
+  plus: svg(<path d="M12 5v14M5 12h14" />),
 };

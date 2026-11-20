@@ -182,6 +182,8 @@ export interface Prefs {
   design?: "focus" | "glass";
   /** Solid instead of translucent glass (Safari doesn't expose the system Reduce Transparency setting). */
   reduceTransparency?: boolean;
+  /** Browse: a list (Anki's table) or icons (a grid of card thumbnails, like Files / Safari's tab overview) */
+  browserView?: "list" | "icons";
 }
 
 export interface Collection {

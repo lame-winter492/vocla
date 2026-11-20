@@ -295,19 +295,21 @@ html[data-nav="fade"]::view-transition-new(*) { animation: fade-in 0.18s ease-ou
    Apple: Reduce Transparency makes glass "frostier"; Increase Contrast makes it mostly black or white with a border.
    Safari doesn't expose Reduce Transparency to web pages, so Preferences has its own switch (.solid-glass). */
 html.solid-glass[data-design="glass"] { --glass-bg: var(--raised); --glass-strong: var(--raised); }
-html.solid-glass[data-design="glass"] :is(.rail, .menu, .toast, .modal, .topbar button, .review-head button.icon, .answer-buttons button, .context-scrim, .topbar::before, .shell::after) {
+html.solid-glass[data-design="glass"] :is(.rail, .menu, .toast, .modal, .topbar button, .toolbar-group, .review-head button.icon, .answer-buttons button, .context-scrim, .topbar::before, .shell::after) {
   -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
 }
 html.solid-glass[data-design="glass"] .topbar::before { background: var(--bg); -webkit-mask-image: none; mask-image: none; }
 @media (prefers-reduced-transparency: reduce) {
   html[data-design="glass"] { --glass-bg: var(--raised); --glass-strong: var(--raised); }
-  html[data-design="glass"] :is(.rail, .menu, .toast, .modal, .topbar button, .review-head button.icon, .answer-buttons button, .context-scrim) {
+  html[data-design="glass"] :is(.rail, .menu, .toast, .modal, .topbar button, .toolbar-group, .review-head button.icon, .answer-buttons button, .context-scrim) {
     -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
   }
 }
 @media (prefers-contrast: more) {
   html[data-design="glass"] { --glass-bg: var(--raised); --glass-strong: var(--raised); --muted: var(--fg-2); }
-  html[data-design="glass"] :is(.rail, .menu, .toast, .modal, .topbar button, .review-head button.icon, .answer-buttons button) {
+  html[data-design="glass"] :is(.rail, .menu, .toast, .modal, .topbar button, .toolbar-group, .review-head button.icon, .answer-buttons button) {
     box-shadow: 0 0 0 1.5px var(--fg) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
   }
 }
+/* buttons inside a shared toolbar capsule never get their own material or outline */
+html[data-design="glass"] .toolbar-group button { box-shadow: none !important; }

@@ -155,7 +155,7 @@ legend { font-weight: 600; font-size: var(--fs-sm); padding: 0 6px; color: var(-
 .hero { display: flex; flex-direction: column; gap: 14px; }
 .hero .big-number { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
 .hero .big-number b { font-size: clamp(72px, 14vw, 104px); font-weight: 600; letter-spacing: -0.045em; line-height: 0.95; font-variant-numeric: tabular-nums; }
-.hero .big-number span { font-size: var(--fs-xl); color: var(--fg-2); }
+.hero .big-number > span { font-size: var(--fs-xl); color: var(--fg-2); } /* not the rolling digits inside <b> */
 .hero .breakdown { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--muted); }
 .hero button.big { align-self: flex-start; }
 @media (max-width: 760px) { .hero button.big { align-self: stretch; } }
@@ -204,9 +204,6 @@ legend { font-weight: 600; font-size: var(--fs-sm); padding: 0 6px; color: var(-
 /* ---------- browser ---------- */
 .browser { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 20px; }
 .browser .sidebar { font-size: var(--fs-sm); overflow: auto; max-height: calc(100vh - 110px); position: sticky; top: 16px; }
-.browser .sidebar div { cursor: pointer; padding: 3px 8px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--fg-2); }
-.browser .sidebar b { display: block; margin: 14px 0 2px; padding: 0 8px; font-size: var(--fs-xs); font-weight: 500; color: var(--muted); }
-.browser .sidebar b:first-child { margin-top: 0; }
 .browser .actions { margin-bottom: 10px; gap: 4px; }
 .browser .actions button, .browser .actions select { min-height: 30px; font-size: var(--fs-sm); padding: 0 10px; }
 .browser table { width: 100%; font-size: var(--fs-sm); }
@@ -219,7 +216,7 @@ legend { font-weight: 600; font-size: var(--fs-sm); padding: 0 6px; color: var(-
 .browser .editpane { margin-top: 14px; padding: 16px 18px; }
 @media (max-width: 760px) {
   .browser { grid-template-columns: minmax(0, 1fr); }
-  .browser .sidebar { position: static; max-height: 150px; border: 1px solid var(--line); border-radius: var(--radius); padding: 6px; background: var(--surface); }
+  .browser .sidebar { position: static; max-height: none; border: 1px solid var(--line); border-radius: var(--radius); padding: 6px; background: var(--surface); } /* sections fold, so no fixed height */
 }
 .flag1 { background: var(--flag1) !important; } .flag2 { background: var(--flag2) !important; } .flag3 { background: var(--flag3) !important; }
 .flag4 { background: var(--flag4) !important; } .flag5 { background: var(--flag5) !important; } .flag6 { background: var(--flag6) !important; } .flag7 { background: var(--flag7) !important; }
@@ -290,7 +287,6 @@ legend { font-weight: 600; font-size: var(--fs-sm); padding: 0 6px; color: var(-
   .rail-item:hover:not(:disabled) { background: var(--hover); color: var(--fg); }
   .decklist tr:hover td { background: var(--surface); }
   .decklist .deck-name:hover { text-decoration: none; color: var(--accent); }
-  .browser .sidebar div:hover { background: var(--surface); color: var(--fg); }
   .browser tbody tr:hover { background: var(--hover); }
   .browser tbody tr.sel, .browser tbody tr.sel:hover { background: var(--sel); box-shadow: inset 2px 0 0 var(--accent); }
   .editor .field .name a:hover { color: var(--accent); text-decoration: none; }
@@ -300,7 +296,7 @@ legend { font-weight: 600; font-size: var(--fs-sm); padding: 0 6px; color: var(-
 /* ---------- touch & iOS ---------- */
 html { -webkit-text-size-adjust: 100%; }
 body { -webkit-tap-highlight-color: transparent; }
-button, .rail, .answer-buttons, .menu, .review-head, .swipe-hint { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+button, .rail, .answer-buttons, .menu, .review-head, .swipe-hint, .decklist, .context-scrim { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; } /* long press opens our menu, not the link callout */
 button, a, input, select, textarea, label { touch-action: manipulation; } /* no double-tap-zoom delay */
 .rail { height: 100dvh; }
 .reviewer { min-height: 100dvh; }

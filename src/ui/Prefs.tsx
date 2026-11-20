@@ -1,7 +1,7 @@
 import { askConfirm, showMessage } from "./dialog";
 import { store, useCol } from "../lib/store";
 import { useNav } from "./nav";
-import { currentDesign } from "./App";
+import { currentDesign } from "./motion";
 
 export function Prefs() {
   const col = useCol();
