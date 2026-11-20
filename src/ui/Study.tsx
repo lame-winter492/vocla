@@ -1,5 +1,5 @@
 import { askConfirm, modalOpen } from "./dialog";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ALL_DECKS, type QueuedCard } from "../lib/col";
 import { store, useCol } from "../lib/store";
 import { formatIvlSecs } from "../lib/time";
@@ -12,6 +12,7 @@ import { NoteEditor } from "./NoteEditor";
 import { haptic } from "./haptics";
 import { transition } from "./motion";
 import { RollingNumber } from "./RollingNumber";
+import { GLYPH } from "./icons";
 
 export function Study({ did }: { did: ID }) {
   const col = useCol();
@@ -259,15 +260,16 @@ export function Study({ did }: { did: ID }) {
   const ivls = showAnswer ? col.nextIntervals(card) : null;
   const elapsed = Math.floor((Date.now() - started) / 1000);
   const deckName = col.deck(card.odid || card.did)?.name ?? "";
-  const tool = (label: string, key: string, fn: () => void, cls = "") => (
+  const tool = (label: string, key: string, fn: () => void, cls = "", icon?: ReactNode) => (
     <button
-      className={cls}
+      className={`tool ${cls}`}
       onClick={() => {
         setTools(false);
         fn();
       }}
     >
-      {label} <span className="kbd">{key}</span>
+      <span className="grow">{label}</span> <span className="kbd">{key}</span>
+      {icon}
     </button>
   );
 
@@ -275,7 +277,7 @@ export function Study({ did }: { did: ID }) {
     <div className="reviewer hero-cta">
       <header className="review-head">
         <button className="ghost icon" aria-label="End session (Esc)" onClick={leave}>
-          ✕
+          {GLYPH.close}
         </button>
         <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={sessionTotal} aria-valuenow={answered}>
           <div style={{ width: `${sessionTotal ? (answered / sessionTotal) * 100 : 0}%` }} />
@@ -284,25 +286,29 @@ export function Study({ did }: { did: ID }) {
           <RollingNumber value={answered} />/<RollingNumber value={sessionTotal} />
         </span>
         <button className="ghost icon" aria-label="Card actions" aria-expanded={tools} onClick={() => setTools(!tools)}>
-          ⋯
+          {GLYPH.ellipsis}
         </button>
         {tools && (
           <div className="menu" style={{ right: 16, top: "calc(100% - 4px)" }} onMouseLeave={() => setTools(false)}>
-            {tool("Edit note", "e", () => setEditing(structuredClone(col.d.notes[card.nid])))}
-            {tool(marked ? "Unmark" : "Mark", "*", () => store.update("Mark", (c) => c.toggleMark([card.nid])))}
-            {tool(card.flags ? "Remove flag" : "Flag red", "^1", () => store.update("Flag", (c) => c.setFlag([card.id], card.flags ? 0 : 1)))}
-            {tool("Replay audio", "r", () => replay())}
-            {tool("Card info", "i", () => setInfo(true))}
+            {tool("Edit note", "e", () => setEditing(structuredClone(col.d.notes[card.nid])), "", GLYPH.edit)}
+            {tool(marked ? "Unmark" : "Mark", "*", () => store.update("Mark", (c) => c.toggleMark([card.nid])), "", marked ? GLYPH.unstar : GLYPH.star)}
+            {tool(card.flags ? "Remove flag" : "Flag red", "^1", () => store.update("Flag", (c) => c.setFlag([card.id], card.flags ? 0 : 1)), "", card.flags ? GLYPH.unflag : GLYPH.flag)}
+            {tool("Replay audio", "r", () => replay(), "", GLYPH.sound)}
+            {tool("Card info", "i", () => setInfo(true), "", GLYPH.info)}
             <hr />
-            {tool("Bury card", "-", () => noteAction("Bury", () => store.col.buryCards([card.id]), "Card buried."))}
-            {tool("Bury note", "=", () => noteAction("Bury Note", () => store.col.buryCards(store.col.cardsOfNote(card.nid).map((c) => c.id)), "Note buried."))}
-            {tool("Suspend card", "@", () => noteAction("Suspend", () => store.col.suspendCards([card.id]), "Card suspended."))}
-            {tool("Suspend note", "!", () =>
-              noteAction("Suspend Note", () => store.col.suspendCards(store.col.cardsOfNote(card.nid).map((c) => c.id)), "Note suspended."),
+            {tool("Bury card", "-", () => noteAction("Bury", () => store.col.buryCards([card.id]), "Card buried."), "", GLYPH.hide)}
+            {tool("Bury note", "=", () => noteAction("Bury Note", () => store.col.buryCards(store.col.cardsOfNote(card.nid).map((c) => c.id)), "Note buried."), "", GLYPH.hide)}
+            {tool("Suspend card", "@", () => noteAction("Suspend", () => store.col.suspendCards([card.id]), "Card suspended."), "", GLYPH.suspend)}
+            {tool(
+              "Suspend note",
+              "!",
+              () => noteAction("Suspend Note", () => store.col.suspendCards(store.col.cardsOfNote(card.nid).map((c) => c.id)), "Note suspended."),
+              "",
+              GLYPH.suspend,
             )}
             <hr />
-            {tool("Undo", "z", undo)}
-            {tool("Deck options", "o", () => go({ name: "options", did: card.odid || card.did }))}
+            {tool("Undo", "z", undo, "", GLYPH.undo)}
+            {tool("Deck options", "o", () => go({ name: "options", did: card.odid || card.did }), "", GLYPH.options)}
             {tool(
               "Delete note",
               "^Del",
@@ -310,6 +316,7 @@ export function Study({ did }: { did: ID }) {
                 if (await askConfirm("Delete this note and all its cards?")) noteAction("Delete Note", () => store.col.removeNotes([card.nid]), "Note deleted.");
               },
               "danger",
+              GLYPH.trash,
             )}
           </div>
         )}
@@ -331,7 +338,11 @@ export function Study({ did }: { did: ID }) {
         </div>
         <div className="row meta">
           <span>{deckName}</span>
-          {marked && <span>★ marked</span>}
+          {marked && (
+            <span className="marked">
+              {GLYPH.starSmall} marked
+            </span>
+          )}
           {card.flags > 0 && <span className={`flagchip flag${card.flags}`}>flag {card.flags}</span>}
           <span style={{ flex: 1 }} />
           {conf.showTimer && <span className="mono">{Math.min(elapsed, conf.maxAnswerSecs)}s</span>}

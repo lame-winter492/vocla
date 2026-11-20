@@ -16,6 +16,7 @@ import { store, useCol } from "../lib/store";
 import { useNav } from "./nav";
 import { haptic } from "./haptics";
 import { RollingNumber } from "./RollingNumber";
+import { GLYPH } from "./icons";
 
 const speak = (text: string, lang: string) => (window as any).voclaSpeak?.(text, lang);
 
@@ -114,9 +115,6 @@ export function CourseView({ id }: { id: string }) {
 
   return (
     <div className="page narrow">
-      <div className="row small">
-        <a onClick={() => go({ name: "courses" })}>← Courses</a>
-      </div>
       <h2>{course.title}</h2>
       {course.units.map((u, ui) => (
         <section key={u.id} style={{ marginBottom: 20 }}>
@@ -131,7 +129,9 @@ export function CourseView({ id }: { id: string }) {
                 const open = isUnlocked(course, prog, l.id);
                 return (
                   <tr key={l.id}>
-                    <td className={`lesson-state${res ? " done" : open ? "" : " locked"}`}>{res ? "✓" : open ? "○" : "—"}</td>
+                    <td className={`lesson-state${res ? " done" : open ? "" : " locked"}`} aria-label={res ? "Done" : open ? "Open" : "Locked"}>
+                      {res ? GLYPH.done : open ? GLYPH.todo : GLYPH.locked}
+                    </td>
                     <td style={{ width: "100%" }} className={open ? "" : "muted"}>
                       {l.title}
                       {!open && <span className="small"> · locked</span>}
@@ -261,7 +261,7 @@ export function LessonPlayer({ courseId, lessonId }: { courseId: string; lessonI
           aria-label="Quit lesson"
           onClick={async () => (await askConfirm("Quit this lesson? Progress in it will be lost.")) && go({ name: "course", id: courseId })}
         >
-          ✕
+          {GLYPH.close}
         </button>
         <div className="meter">
           <div style={{ width: `${(finishedCount / Math.max(1, total)) * 100}%` }} />
@@ -294,7 +294,8 @@ function Feedback({ fb, onContinue }: { fb: { result: Result; correct: string };
     <div className={`feedback ${ok ? "good" : "bad"}`}>
       <b className="fb-title">
         <svg className="fb-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          {ok ? <path className="draw" d="M5 12.5l4.5 4.5L19 7.5" pathLength={1} /> : <path className="draw" d="M6.5 6.5l11 11M17.5 6.5l-11 11" pathLength={1} />}
+          {/* Lucide's check / x paths, drawn on with a stroke animation */}
+          {ok ? <path className="draw" d="M20 6 9 17l-5-5" pathLength={1} /> : <path className="draw" d="M18 6 6 18M6 6l12 12" pathLength={1} />}
         </svg>
         {fb.result === "correct" ? "Correct!" : fb.result === "accent" ? "Almost. Watch the accents:" : "Correct answer:"}
       </b>
@@ -384,8 +385,8 @@ function ChoiceEx({ ex, lang, locked, onSubmit }: ExProps & { ex: Extract<Exerci
       <h3>
         Select the correct meaning{" "}
         {ex.speak && (
-          <button className="ghost" aria-label="Play audio" onClick={() => speak(ex.prompt, lang)}>
-            ▶
+          <button className="ghost icon" aria-label="Play audio" onClick={() => speak(ex.prompt, lang)}>
+            {GLYPH.sound}
           </button>
         )}
       </h3>
@@ -463,8 +464,8 @@ function ListenEx({ ex, lang, locked, onSubmit }: ExProps & { ex: Extract<Exerci
     <div>
       <h3>Type what you hear</h3>
       <p>
-        <button className="big" onClick={() => speak(ex.text, lang)}>
-          ▶ Play
+        <button className="big play-btn" onClick={() => speak(ex.text, lang)}>
+          {GLYPH.sound} Play
         </button>
       </p>
       <TextAnswer answers={ex.answers?.length ? ex.answers : [ex.text]} locked={locked} onSubmit={onSubmit} placeholder="Type what you hear" />

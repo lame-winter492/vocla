@@ -307,8 +307,9 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
                   store.update("Delete Saved Search", (c) => delete c.d.savedSearches[name]);
                 }}
                 title="Delete"
+                aria-label={`Delete saved search ${name}`}
               >
-                ×
+                {GLYPH.closeSmall}
               </a>
             </div>
           )),
@@ -558,7 +559,7 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
                   {cols.map((k) => (
                     <th key={k} onClick={() => setSort((s) => ({ key: k, desc: s.key === k ? !s.desc : false }))}>
                       {COL_NAMES[k]}
-                      {sort.key === k ? (sort.desc ? " ▼" : " ▲") : ""}
+                      {sort.key === k && <span className="sort-dir">{sort.desc ? GLYPH.down : GLYPH.up}</span>}
                     </th>
                   ))}
                 </tr>
@@ -811,7 +812,7 @@ function ChangeNoteType({ nids, onClose }: { nids: ID[]; onClose: () => void }) 
           <h3>Fields</h3>
           {nt.fields.map((f, i) => (
             <label key={i}>
-              {f.name} ←{" "}
+              {f.name} {GLYPH.arrowLeft}{" "}
               <select value={fmap[i] ?? -1} onChange={(e) => setFmap(fmap.map((v, j) => (j === i ? Number(e.target.value) : v)))}>
                 <option value={-1}>(nothing)</option>
                 {oldNt.fields.map((o, oi) => (
@@ -827,7 +828,7 @@ function ChangeNoteType({ nids, onClose }: { nids: ID[]; onClose: () => void }) 
               <h3>Templates</h3>
               {nt.templates.map((t, i) => (
                 <label key={i}>
-                  {t.name} ←{" "}
+                  {t.name} {GLYPH.arrowLeft}{" "}
                   <select value={tmap[i] ?? -1} onChange={(e) => setTmap(tmap.map((v, j) => (j === i ? Number(e.target.value) : v)))}>
                     <option value={-1}>(nothing)</option>
                     {oldNt.templates.map((o, oi) => (

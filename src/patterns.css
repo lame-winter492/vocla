@@ -38,6 +38,7 @@ html[data-design="glass"] button.streak-ring {
   transition: stroke-dashoffset var(--dur-smooth) var(--ease-smooth);
 }
 .streak-ring span { position: relative; }
+.streak-ring.empty .fill { opacity: 0; } /* a round cap would leave a dot at 0% */
 
 /* ---------- App Store Today card ---------- */
 .hero-meta span + span::before { content: " · "; }
@@ -234,3 +235,23 @@ html[data-design="glass"] .sel-badge { color: #fff; }
   .side-items, .side-head .glyph, .streak-ring .fill { transition: none; }
   .sel-badge { animation: none; }
 }
+
+/* ---------- Lucide symbols inside buttons, rows and menus ---------- */
+.glyph { flex: none; vertical-align: -0.18em; }
+button:has(> .glyph):not(.icon):not(.menu button) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+button.big:has(> .glyph) { gap: 8px; }
+/* deck tree disclosure: one chevron that turns, as in Files and Mail */
+.twisty { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; height: 18px; cursor: pointer; }
+.twisty .glyph { transition: rotate var(--dur-snappy) var(--ease-snappy); }
+.twisty.open .glyph { rotate: 90deg; }
+.sort-dir { display: inline-flex; vertical-align: middle; margin-left: 2px; }
+.lesson-state .glyph { display: block; margin: 0 auto; }
+.review-head .marked, .meta .marked { display: inline-flex; align-items: center; gap: 3px; }
+.marked .glyph { color: #ffb800; fill: currentColor; }
+/* study tools: label, keyboard shortcut (Focus) and symbol on the trailing edge */
+.menu button.tool { justify-content: flex-start; gap: 10px; }
+.menu button.tool .grow { flex: 1; }
+.menu button.tool .kbd { margin-left: auto; }
+@media (prefers-reduced-motion: reduce) { .twisty .glyph { transition: none; } }
+/* row actions stay quiet until needed (iOS uses a light grey ellipsis) */
+html[data-design="glass"] .decklist button.icon { color: var(--muted); }

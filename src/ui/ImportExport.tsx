@@ -13,6 +13,7 @@ import {
 import { searchNotes } from "../lib/search";
 import { store, useCol } from "../lib/store";
 import type { Collection, ID } from "../lib/types";
+import { GLYPH } from "./icons";
 import { useNav } from "./nav";
 
 export function ImportPage() {
@@ -177,7 +178,7 @@ export function ImportPage() {
                     Column {i + 1} <span className="muted small">e.g. "{(text.parsed.rows[0]?.[i] ?? "").slice(0, 40)}"</span>
                   </td>
                   <td>
-                    →{" "}
+                    {GLYPH.arrowRight}{" "}
                     <select value={m} onChange={(e) => setMapping(mapping.map((v, j) => (j === i ? Number(e.target.value) : v)))}>
                       <option value={-1}>(ignore)</option>
                       <option value={-2}>Tags</option>

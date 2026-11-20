@@ -102,8 +102,12 @@ export function DeckList() {
         >
           <td style={{ paddingLeft: 4 + n.depth * 22 }}>
             {n.children.length > 0 ? (
-              <a className="twisty" onClick={() => store.mutate(() => (d.collapsed = !d.collapsed))} aria-label={d.collapsed ? "Expand" : "Collapse"}>
-                {d.collapsed ? "▸" : "▾"}
+              <a
+                className={`twisty${d.collapsed ? "" : " open"}`}
+                onClick={() => store.mutate(() => (d.collapsed = !d.collapsed))}
+                aria-label={d.collapsed ? "Expand" : "Collapse"}
+              >
+                {GLYPH.chevron}
               </a>
             ) : (
               <span className="twisty" />
@@ -124,7 +128,7 @@ export function DeckList() {
           <td className={`num${n.counts.newCount ? " c-new" : ""}`}>{n.counts.newCount ? `${n.counts.newCount} new` : <span className="zero">0 new</span>}</td>
           <td style={{ position: "relative", width: 44, textAlign: "right", padding: "4px 0" }}>
             <button className="ghost icon" aria-label={`Actions for ${n.name}`} onClick={() => setMenu(menu === d.id ? null : d.id)}>
-              ⋯
+              {GLYPH.ellipsis}
             </button>
             {menu === d.id && (
               <div className="menu" onMouseLeave={() => !lifted && setMenu(null)}>
@@ -185,7 +189,7 @@ export function DeckList() {
         <div className="eyebrow">{dateLabel}</div>
         <h1 className="large-title">Today</h1>
         <button
-          className="streak-ring"
+          className={`streak-ring${ring === 0 ? " empty" : ""}`}
           style={{ ["--p" as string]: ring }}
           aria-label={`${days}-day streak, ${doneToday} reviewed today. Statistics`}
           onClick={() => go({ name: "stats" })}
@@ -223,7 +227,7 @@ export function DeckList() {
               {all.reviewCount} due · {all.learnCount} learning · {all.newCount} new · about {minutes} min
             </div>
             <button className={`primary big${storyCard ? "" : " hero-cta"}`} autoFocus onClick={heroAction!}>
-              Start session →
+              Start session {GLYPH.arrowRight}
             </button>
           </>
         ) : (
@@ -237,7 +241,7 @@ export function DeckList() {
             </div>
             {nextLesson ? (
               <button className={`primary big${storyCard ? "" : " hero-cta"}`} onClick={heroAction!}>
-                Continue course →
+                Continue course {GLYPH.arrowRight}
               </button>
             ) : (
               <button className="big" onClick={() => go({ name: "add" })}>

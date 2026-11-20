@@ -16,6 +16,7 @@ import { Prefs } from "./Prefs";
 import { Stats } from "./Stats";
 import { Study } from "./Study";
 import { currentDesign, phoneLayout, transition, type NavKind } from "./motion";
+import { TAB_ICONS } from "./icons";
 
 // ---------- navigation model (drives iOS-style transitions and the back button) ----------
 type Name = Route["name"];
@@ -376,40 +377,4 @@ export function App() {
   );
 }
 
-const svg = (d: ReactNode) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {d}
-  </svg>
-);
-const ICONS = {
-  today: svg(
-    <>
-      <circle cx="12" cy="12" r="8" />
-      <path d="M12 8v4l3 2" />
-    </>,
-  ),
-  courses: svg(<path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2zM8 7h6" />),
-  browse: svg(
-    <>
-      <circle cx="11" cy="11" r="6" />
-      <path d="m20 20-4.5-4.5" />
-    </>,
-  ),
-  stats: svg(<path d="M5 20V10M12 20V4M19 20v-7" />),
-  more: svg(
-    <>
-      <circle cx="5" cy="12" r="1" />
-      <circle cx="12" cy="12" r="1" />
-      <circle cx="19" cy="12" r="1" />
-    </>,
-  ),
-  search: svg(
-    <>
-      <circle cx="11" cy="11" r="6" />
-      <path d="m20 20-4.5-4.5" />
-    </>,
-  ),
-  undo: svg(<path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3" />),
-  back: svg(<path d="M15 5l-7 7 7 7" />),
-  plus: svg(<path d="M12 5v14M5 12h14" />),
-};
+const ICONS = TAB_ICONS;
