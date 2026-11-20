@@ -7,7 +7,10 @@ npm install
 npm run dev      # start dev server
 npm test         # unit tests (scheduler, templates, search, queues)
 npm run build    # typecheck + production build
+npm run ios      # build, sync into the iOS project and open Xcode (macOS)
 ```
+
+**iOS app:** a native Capacitor wrapper of the same app lives in `ios/`. It has real haptics, the share sheet for exports and fully offline fonts. See [docs/ios-app.md](docs/ios-app.md) for how to build and run it on an iPhone.
 
 ## Features (Anki parity)
 

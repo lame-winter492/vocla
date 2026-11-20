@@ -370,3 +370,15 @@ button:active:not(:disabled) { transform: scale(0.96); transition-duration: 0.06
 .swipe-hint.again { left: 20px; color: var(--again); border: 2px solid var(--again); }
 .swipe-hint.good { right: 20px; color: var(--good); border: 2px solid var(--good); }
 .reviewer[data-swipe="again"] .swipe-hint.again, .reviewer[data-swipe="good"] .swipe-hint.good { opacity: var(--swipe, 0); }
+
+/* ---------- native iOS app (Capacitor) ----------
+   The web view doesn't scroll; panes scroll inside a fixed app shell, like a native app. */
+html.native, html.native body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+html.native body { -webkit-user-select: none; user-select: none; }
+html.native input, html.native textarea, html.native .cardview, html.native [contenteditable] { -webkit-user-select: text; user-select: text; }
+html.native #root { height: 100%; }
+html.native .shell { height: 100%; min-height: 0; }
+html.native .main { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; }
+html.native .rail { height: 100%; }
+html.native .reviewer { min-height: 0; height: 100%; }
+@media (max-width: 760px) { html.native .rail { height: auto; } }

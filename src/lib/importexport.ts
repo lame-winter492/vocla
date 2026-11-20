@@ -1,5 +1,6 @@
 // Import / export: plain text (CSV/TSV), deck packages and full backups (JSON).
 import type { Col } from "./col";
+import { nativeSaveFile } from "./native";
 import { newGuid, newId } from "./stock";
 import { escapeHtml, stripHtml } from "./template";
 import type { Card, Collection, Deck, ID, Note, NoteType } from "./types";
@@ -284,7 +285,9 @@ export function importDeckPackage(col: Col, pkg: DeckPackage): { notes: number; 
 
 // ---------- helpers ----------
 
-export function download(filename: string, data: string, type = "application/json"): void {
+export async function download(filename: string, data: string, type = "application/json"): Promise<void> {
+  // in the iOS app, files go through the share sheet (Save to Files, AirDrop, …)
+  if (await nativeSaveFile(filename, data, type)) return;
   const blob = new Blob([data], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

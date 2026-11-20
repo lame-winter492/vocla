@@ -1,0 +1,26 @@
+# Builds the iOS app for the Simulator on every push (no signing needed),
+# so a broken native build shows up even when nobody on the team has a Mac handy.
+name: iOS build
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Build web app and copy it into the iOS project
+        run: npm run build && npx cap sync ios
+      - name: Build for iOS Simulator
+        run: >
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO build

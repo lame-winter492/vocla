@@ -2,6 +2,7 @@
 // - Android & other browsers with the Vibration API: navigator.vibrate.
 // - iOS Safari has no Vibration API, but since iOS 18 toggling a native `<input type=checkbox switch>`
 //   plays the system haptic tick, so we click a hidden one. If Apple changes that, this silently does nothing.
+import { isNative, nativeHaptic } from "../lib/native";
 import { store } from "../lib/store";
 
 type Kind = "tap" | "success" | "error";
@@ -26,7 +27,12 @@ function tick() {
 
 export function haptic(kind: Kind = "tap"): void {
   try {
-    if (!store.col.d.prefs.haptics || !coarse()) return;
+    if (!store.col.d.prefs.haptics) return;
+    if (isNative()) {
+      void nativeHaptic(kind); // Taptic Engine in the iOS app
+      return;
+    }
+    if (!coarse()) return;
     if (typeof navigator.vibrate === "function") {
       navigator.vibrate(kind === "error" ? [24, 60, 24] : kind === "success" ? [12, 40, 12] : 10);
       return;
