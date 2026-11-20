@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "Vocla",
+    "slug": "vocla",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "vocla",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "app.vocla.ios",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "app.vocla.android",
+      "adaptiveIcon": {
+        "backgroundColor": "#101115",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png",
+      "name": "Vocla"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#101115",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 140
+        }
+      ],
+      "expo-sharing"
+    ]
+  }
+}

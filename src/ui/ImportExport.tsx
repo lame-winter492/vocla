@@ -1,7 +1,6 @@
 import { askConfirm } from "./dialog";
 import { useState } from "react";
 import {
-  download,
   exportDeckPackage,
   exportNotesText,
   importDeckPackage,
@@ -10,6 +9,7 @@ import {
   type DeckPackage,
   type TextParse,
 } from "../lib/importexport";
+import { download } from "./download";
 import { searchNotes } from "../lib/search";
 import { store, useCol } from "../lib/store";
 import type { Collection, ID } from "../lib/types";

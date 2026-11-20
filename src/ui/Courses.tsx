@@ -11,7 +11,7 @@ import {
   type Course,
   type Exercise,
 } from "../lib/courses";
-import { download } from "../lib/importexport";
+import { download } from "./download";
 import { store, useCol } from "../lib/store";
 import { useNav } from "./nav";
 import { haptic } from "./haptics";

@@ -1,4 +1,5 @@
-// Global collection store: persistence (IndexedDB), undo/redo and change notifications.
+// Global collection store: persistence, undo/redo and change notifications.
+// Shared by the web app (IndexedDB) and the native app (a file, see mobile/src/storage.ts).
 import { useSyncExternalStore } from "react";
 import { Col } from "./col";
 import { CLOZE_CSS, DEFAULT_CSS, emptyCollection, LEGACY_CLOZE_CSS, LEGACY_DEFAULT_CSS, stockNoteType } from "./stock";
@@ -37,6 +38,16 @@ async function idbSet(key: string, value: unknown): Promise<void> {
   });
 }
 
+/** Where the collection is kept. The web app uses IndexedDB; the native app sets its own with setStorage(). */
+export interface StorageBackend {
+  get(): Promise<Collection | undefined>;
+  set(data: Collection): Promise<void>;
+}
+let backend: StorageBackend = { get: () => idbGet<Collection>(KEY), set: (d) => idbSet(KEY, d) };
+export function setStorage(b: StorageBackend): void {
+  backend = b;
+}
+
 interface UndoEntry {
   label: string;
   snapshot: Collection;
@@ -53,7 +64,7 @@ class Store {
 
   async load(): Promise<void> {
     try {
-      const data = await idbGet<Collection>(KEY);
+      const data = await backend.get();
       if (data) this.col = new Col(migrate(data));
     } catch (e) {
       console.error("Failed to load collection", e);
@@ -140,7 +151,7 @@ class Store {
     if (this.saveTimer) clearTimeout(this.saveTimer);
     this.saveTimer = null;
     try {
-      await idbSet(KEY, this.col.d);
+      await backend.set(this.col.d);
     } catch (e) {
       console.error("Failed to save collection", e);
     }
@@ -170,7 +181,8 @@ function migrate(data: Collection): Collection {
 
 export const store = new Store();
 
-if (typeof window !== "undefined") {
+// browsers: save when the page goes away (React Native has a window object but no DOM events)
+if (typeof document !== "undefined" && typeof window !== "undefined" && typeof window.addEventListener === "function") {
   window.addEventListener("beforeunload", () => void store.save());
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") void store.save();
