@@ -9,6 +9,7 @@ import { CardView, readTyped } from "./CardView";
 import { Modal } from "./Modal";
 import { useNav } from "./nav";
 import { NoteEditor } from "./NoteEditor";
+import { haptic } from "./haptics";
 
 export function Study({ did }: { did: ID }) {
   const col = useCol();
@@ -55,14 +56,68 @@ export function Study({ did }: { did: ID }) {
 
   const reveal = () => {
     if (!card || showAnswer) return;
+    haptic("tap");
     setTyped(readTyped(viewRef.current));
     setShowAnswer(true);
   };
 
+  // ---- touch: tap the card to reveal, then swipe right = Good, left = Again ----
+  const drag = useRef<{ x: number; y: number; dx: number; active: boolean } | null>(null);
+  const SWIPE = 90;
+  const cardEl = () => viewRef.current?.querySelector<HTMLElement>(".cardview") ?? null;
+  const setSwipeVisual = (dx: number, animate: boolean) => {
+    const el = cardEl();
+    const root = viewRef.current?.closest<HTMLElement>(".reviewer");
+    if (el) {
+      el.style.transition = animate ? "transform .28s cubic-bezier(.2,.9,.3,1.2)" : "none";
+      el.style.transform = dx ? `translateX(${dx}px) rotate(${dx / 30}deg)` : "";
+    }
+    if (root) {
+      root.dataset.swipe = dx > 24 ? "good" : dx < -24 ? "again" : "";
+      root.style.setProperty("--swipe", String(Math.min(1, Math.abs(dx) / SWIPE)));
+    }
+  };
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (!showAnswer || e.pointerType === "mouse") return;
+    drag.current = { x: e.clientX, y: e.clientY, dx: 0, active: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (!d.active && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.3) d.active = true;
+    if (!d.active) return;
+    if (Math.abs(d.dx) < SWIPE && Math.abs(dx) >= SWIPE) haptic("tap"); // crossing the threshold
+    d.dx = dx;
+    setSwipeVisual(dx, false);
+  };
+  const onPointerUp = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d?.active) return;
+    if (d.dx >= SWIPE) answer(3);
+    else if (d.dx <= -SWIPE) answer(1);
+    setSwipeVisual(0, true);
+  };
+  const onCardClick = (e: React.MouseEvent) => {
+    if (showAnswer) return;
+    // ignore taps on things inside the card (audio buttons, the type-in box, links)
+    const path = e.nativeEvent.composedPath() as HTMLElement[];
+    if (path.some((el) => el.tagName && ["BUTTON", "INPUT", "A", "TEXTAREA", "SELECT"].includes(el.tagName))) return;
+    reveal();
+  };
+
   const answer = (ease: Ease) => {
     if (!card || !showAnswer) return;
+    haptic(ease === 1 ? "error" : "tap");
     const { leech } = store.update("Review", (c) => c.answer(card.id, ease, Date.now() - started));
-    if (leech) toast(conf.lapse.leechAction === "suspend" ? "Card was a leech and has been suspended." : "Card was marked as a leech.");
+    if (leech)
+      toast(
+        conf.lapse.leechAction === "suspend"
+          ? "This card keeps slipping, so it's suspended. Try adding an example sentence or a memory hook, then unsuspend it."
+          : "This card keeps slipping (tagged leech). An example sentence or a memory hook usually helps.",
+      );
     lastCid.current = card.id;
     setAnswered((n) => n + 1);
     next();
@@ -238,7 +293,21 @@ export function Study({ did }: { did: ID }) {
           </div>
         )}
       </header>
-      <div className="cardarea" ref={viewRef} onDoubleClick={() => !showAnswer && reveal()}>
+      <div
+        className="cardarea"
+        ref={viewRef}
+        onClick={onCardClick}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <div className="swipe-hint again" aria-hidden="true">
+          Again
+        </div>
+        <div className="swipe-hint good" aria-hidden="true">
+          Good
+        </div>
         <div className="row meta">
           <span>{deckName}</span>
           {marked && <span>★ marked</span>}

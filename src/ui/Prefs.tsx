@@ -24,6 +24,23 @@ export function Prefs() {
         </label>
       </fieldset>
       <fieldset>
+        <legend>Learning</legend>
+        <label>
+          Language you&#39;re learning (for audio){" "}
+          <select id="pref-lang" value={p.targetLang} onChange={(e) => set(() => (p.targetLang = e.target.value))}>
+            {LANGS.map(([code, name]) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="small muted">Used by the Vocabulary note type to read words and examples aloud.</div>
+        <label>
+          <input type="checkbox" checked={p.haptics} onChange={(e) => set(() => (p.haptics = e.target.checked))} /> Haptic feedback on phones
+        </label>
+      </fieldset>
+      <fieldset>
         <legend>Review</legend>
         <label>
           <input type="checkbox" checked={p.showIntervalsOnButtons} onChange={(e) => set(() => (p.showIntervalsOnButtons = e.target.checked))} /> Show
@@ -78,3 +95,26 @@ export function Prefs() {
     </div>
   );
 }
+
+const LANGS: [string, string][] = [
+  ["es-ES", "Spanish (Spain)"],
+  ["es-MX", "Spanish (Mexico)"],
+  ["fr-FR", "French"],
+  ["de-DE", "German"],
+  ["it-IT", "Italian"],
+  ["pt-BR", "Portuguese (Brazil)"],
+  ["pt-PT", "Portuguese (Portugal)"],
+  ["nl-NL", "Dutch"],
+  ["sv-SE", "Swedish"],
+  ["pl-PL", "Polish"],
+  ["ru-RU", "Russian"],
+  ["uk-UA", "Ukrainian"],
+  ["tr-TR", "Turkish"],
+  ["ar-SA", "Arabic"],
+  ["hi-IN", "Hindi"],
+  ["ja-JP", "Japanese"],
+  ["ko-KR", "Korean"],
+  ["zh-CN", "Chinese (Mandarin)"],
+  ["en-US", "English (US)"],
+  ["en-GB", "English (UK)"],
+];

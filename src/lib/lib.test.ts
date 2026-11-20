@@ -57,8 +57,9 @@ describe("notes", () => {
   });
 });
 
-describe("scheduler", () => {
+describe("scheduler (SM-2)", () => {
   const conf = defaultDeckConfig();
+  conf.fsrs.enabled = false;
   const now = 1_700_000_000_000;
   const today = 20000;
   const ctx = { now, today, conf };
@@ -174,5 +175,47 @@ describe("all-decks session", () => {
     const q = col.getNextCard(ALL_DECKS)!;
     col.answer(q.card.id, 3, 1000);
     expect(col.counts(ALL_DECKS).newCount).toBe(3);
+  });
+});
+
+describe("scheduler (FSRS)", () => {
+  const conf = defaultDeckConfig(); // FSRS on, 90% retention
+  const now = 1_700_000_000_000;
+  const today = 20000;
+  const ctx = { now, today, conf };
+  const base: Card = { id: 7, nid: 1, did: 1, odid: 0, ord: 0, mod: 0, type: CardType.New, queue: Queue.New, due: 1, odue: 0, ivl: 0, factor: 0, reps: 0, lapses: 0, step: 0, flags: 0 };
+
+  it("sets memory state and uses learning steps", () => {
+    const again = answerCard(base, 1, ctx).card;
+    expect(again.queue).toBe(Queue.Learn);
+    expect(again.stability).toBeCloseTo(0.212, 3);
+    expect(again.difficulty).toBeGreaterThan(5);
+    const easy = answerCard(base, 4, ctx).card;
+    expect(easy.type).toBe(CardType.Review);
+    // easy initial stability 8.3 days -> interval ≈ 8 days at 90% retention (± fuzz)
+    expect(easy.ivl).toBeGreaterThanOrEqual(6);
+    expect(easy.ivl).toBeLessThanOrEqual(10);
+  });
+
+  it("grows intervals on success and shrinks on lapse", () => {
+    let c = answerCard(base, 3, ctx).card; // step 1
+    c = answerCard(c, 3, { ...ctx, now: now + 600_000 }).card; // graduate
+    expect(c.type).toBe(CardType.Review);
+    const firstIvl = c.ivl;
+    const later = { ...ctx, now: now + firstIvl * 86400_000, today: today + firstIvl };
+    const good = answerCard(c, 3, later).card;
+    expect(good.ivl).toBeGreaterThan(firstIvl);
+    expect(good.stability!).toBeGreaterThan(c.stability!);
+    const lapse = answerCard(c, 1, later).card;
+    expect(lapse.type).toBe(CardType.Relearn);
+    expect(lapse.stability!).toBeLessThan(c.stability!);
+    expect(lapse.lapses).toBe(1);
+  });
+
+  it("higher desired retention means shorter intervals", () => {
+    const strict = { ...ctx, conf: { ...conf, fsrs: { enabled: true, desiredRetention: 0.97 } } };
+    const a = answerCard(base, 4, ctx).card.ivl;
+    const b = answerCard(base, 4, strict).card.ivl;
+    expect(b).toBeLessThan(a);
   });
 });

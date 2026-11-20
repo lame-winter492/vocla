@@ -71,6 +71,10 @@ export interface Card {
   lapses: number;
   step: number; // current learning/relearning step index
   flags: number; // 0-7
+  // FSRS memory state (absent until the card is first answered with FSRS on)
+  stability?: number; // days until recall probability drops to 90%
+  difficulty?: number; // 1 (easy) – 10 (hard)
+  lastReview?: number; // epoch ms
 }
 
 export interface RevlogEntry {
@@ -157,6 +161,7 @@ export interface DeckConfig {
     leechAction: "suspend" | "tag";
   };
   newMix: NewMix;
+  fsrs: { enabled: boolean; desiredRetention: number };
   maxAnswerSecs: number;
   showTimer: boolean;
   autoplay: boolean; // speak TTS automatically
@@ -171,6 +176,8 @@ export interface Prefs {
   lastUnburied: number; // day number
   lastNoteType: ID;
   lastAddDeck: ID;
+  targetLang: string; // BCP-47 language used by {{tts auto:Field}}
+  haptics: boolean;
 }
 
 export interface Collection {

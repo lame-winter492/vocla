@@ -1,4 +1,5 @@
 // SM-2 scheduler modelled on Anki's v3 scheduler.
+import { fsrs, memoryFromSm2, type Memory } from "./fsrs";
 import { CardType, Queue, type Card, type Deck, type DeckConfig, type Ease } from "./types";
 
 export interface SchedCtx {
@@ -79,11 +80,11 @@ function scheduleLearning(card: Card, delaySecs: number, ctx: SchedCtx): void {
   }
 }
 
-function graduate(card: Card, ivl: number, ctx: SchedCtx): void {
+function graduate(card: Card, ivl: number, ctx: SchedCtx, exact = false): void {
   const max = ctx.conf.rev.maxIvl;
   card.type = CardType.Review;
   card.queue = Queue.Review;
-  card.ivl = fuzzed(ivl, 1, max, card.id + card.reps);
+  card.ivl = exact ? ivl : fuzzed(ivl, 1, max, card.id + card.reps);
   card.due = ctx.today + card.ivl;
   card.step = 0;
 }
@@ -156,6 +157,28 @@ export function answerCard(orig: Card, ease: Ease, ctx: SchedCtx): AnswerResult 
   card.reps += 1;
   const { conf } = ctx;
 
+  // FSRS: update the memory state first; intervals then come from stability + desired retention
+  const useFsrs = !!conf.fsrs?.enabled;
+  let fsrsDays = 0;
+  if (useFsrs) {
+    const wasReview = orig.type === CardType.Review;
+    const elapsed = orig.lastReview
+      ? Math.floor((ctx.now - orig.lastReview) / 86400_000)
+      : wasReview
+        ? Math.max(0, ctx.today - (orig.due - orig.ivl))
+        : 0;
+    const prev: Memory | null = orig.stability
+      ? { stability: orig.stability, difficulty: orig.difficulty ?? 5 }
+      : wasReview || orig.type === CardType.Relearn
+        ? memoryFromSm2(orig.ivl, orig.factor)
+        : null;
+    const m = fsrs.next(prev, ease, elapsed);
+    card.stability = m.stability;
+    card.difficulty = m.difficulty;
+    card.lastReview = ctx.now;
+    fsrsDays = fuzzed(fsrs.interval(m.stability, conf.fsrs.desiredRetention), 1, conf.rev.maxIvl, card.id + card.reps);
+  }
+
   if (card.type === CardType.New) {
     card.type = CardType.Learn;
     card.step = 0;
@@ -167,7 +190,8 @@ export function answerCard(orig: Card, ease: Ease, ctx: SchedCtx): AnswerResult 
     res.logType = 0;
     const steps = conf.new.steps;
     const grad = () => {
-      graduate(card, ease === 4 ? conf.new.easyIvl : conf.new.graduatingIvl, ctx);
+      if (useFsrs) graduate(card, fsrsDays, ctx, true);
+      else graduate(card, ease === 4 ? conf.new.easyIvl : conf.new.graduatingIvl, ctx);
       res.logIvl = card.ivl;
     };
     if (ease === 4 || steps.length === 0) grad();
@@ -199,7 +223,8 @@ export function answerCard(orig: Card, ease: Ease, ctx: SchedCtx): AnswerResult 
       card.step = 0;
       res.logIvl = card.ivl;
     };
-    if (ease === 4) back(card.ivl + 1);
+    if (useFsrs && (ease === 4 || steps.length === 0)) back(fsrsDays);
+    else if (ease === 4) back(card.ivl + 1);
     else if (steps.length === 0) back(card.ivl);
     else if (ease === 1) {
       card.step = 0;
@@ -211,7 +236,7 @@ export function answerCard(orig: Card, ease: Ease, ctx: SchedCtx): AnswerResult 
       res.logIvl = -Math.round(mins * 60);
     } else {
       const next = card.step + 1;
-      if (next >= steps.length) back(card.ivl);
+      if (next >= steps.length) back(useFsrs ? fsrsDays : card.ivl);
       else {
         card.step = next;
         scheduleLearning(card, steps[next] * 60, ctx);
@@ -224,7 +249,7 @@ export function answerCard(orig: Card, ease: Ease, ctx: SchedCtx): AnswerResult 
     if (ease === 1) {
       card.lapses += 1;
       card.factor = Math.max(1300, card.factor - 200);
-      card.ivl = lapseIvl(card, ctx);
+      card.ivl = useFsrs ? fsrsDays : lapseIvl(card, ctx);
       res.leech = isLeech(card.lapses, conf.lapse.leechThreshold);
       if (conf.lapse.steps.length > 0) {
         card.type = CardType.Relearn;
@@ -237,8 +262,12 @@ export function answerCard(orig: Card, ease: Ease, ctx: SchedCtx): AnswerResult 
         res.logIvl = card.ivl;
       }
     } else {
-      const ivls = reviewIntervals(orig, ctx);
-      const ivl = ease === 2 ? ivls.hard : ease === 3 ? ivls.good : ivls.easy;
+      let ivl: number;
+      if (useFsrs) ivl = fsrsDays;
+      else {
+        const ivls = reviewIntervals(orig, ctx);
+        ivl = ease === 2 ? ivls.hard : ease === 3 ? ivls.good : ivls.easy;
+      }
       if (ease === 2) card.factor = Math.max(1300, card.factor - 150);
       if (ease === 4) card.factor += 150;
       card.ivl = ivl;

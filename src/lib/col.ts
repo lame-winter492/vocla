@@ -876,7 +876,9 @@ export class Col {
   /** Add a lesson's vocab to "Courses::<course>" as two-way cards. Skips words already there. */
   addVocabToDeck(courseTitle: string, vocab: VocabItem[], tag: string): number {
     const nt =
-      this.notetypes().find((n) => n.name === "Basic (and reversed card)") ?? this.notetypes().find((n) => n.kind === "standard");
+      this.notetypes().find((n) => n.name === "Vocabulary") ??
+      this.notetypes().find((n) => n.name === "Basic (and reversed card)") ??
+      this.notetypes().find((n) => n.kind === "standard");
     if (!nt) return 0;
     const deck = this.addDeck(`Courses::${courseTitle}`);
     const have = new Set(
@@ -889,7 +891,10 @@ export class Col {
       if (have.has(v.word.trim().toLowerCase())) continue;
       const note = this.newNote(nt);
       note.fields[0] = escapeHtml(v.word);
-      note.fields[1] = escapeHtml(v.translation) + (v.note ? `<br><small>${escapeHtml(v.note)}</small>` : "");
+      if (nt.name === "Vocabulary") {
+        note.fields[1] = escapeHtml(v.translation);
+        if (v.note) note.fields[4] = escapeHtml(v.note);
+      } else note.fields[1] = escapeHtml(v.translation) + (v.note ? `<br><small>${escapeHtml(v.note)}</small>` : "");
       note.tags = [tag];
       if (this.addNote(note, deck.id)) {
         added++;

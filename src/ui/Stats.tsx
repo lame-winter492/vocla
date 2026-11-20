@@ -109,6 +109,10 @@ export function Stats({ did: initial }: { did?: ID }) {
   }
 
   const daysStudied = perDay.filter((x) => x > 0).length;
+  // true retention: share of scheduled reviews (not learning steps) answered without "Again"
+  const periodReviews = logs.filter((r) => r.type === 1 && dayNumber(r.id, roll) > today - period);
+  const trueRetention = periodReviews.length ? periodReviews.filter((r) => r.ease > 1).length / periodReviews.length : null;
+  const conf = col.confFor(did);
 
   return (
     <div className="page">
@@ -135,6 +139,20 @@ export function Stats({ did: initial }: { did?: ID }) {
         <br />
         Correct answers on mature cards: {matureCorrect}/{matureLogs.length}
         {matureLogs.length ? ` (${((matureCorrect / matureLogs.length) * 100).toFixed(1)}%)` : ""}.
+      </p>
+
+      <h3>Retention</h3>
+      <p>
+        {trueRetention === null ? (
+          <span className="muted">No reviews of graduated cards in this period yet.</span>
+        ) : (
+          <>
+            You remembered <b className="mono">{(trueRetention * 100).toFixed(1)}%</b> of {periodReviews.length} reviews in this period.
+          </>
+        )}
+        {conf.fsrs?.enabled && (
+          <span className="muted"> Target (desired retention): {Math.round(conf.fsrs.desiredRetention * 100)}%.</span>
+        )}
       </p>
 
       <Bars title="Future Due" values={forecast} labels={["today", `+${period - 1}d`]} />

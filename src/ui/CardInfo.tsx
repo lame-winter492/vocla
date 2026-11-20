@@ -1,3 +1,4 @@
+import { fsrs } from "../lib/fsrs";
 import { useCol } from "../lib/store";
 import { formatDate, formatDays, formatIvlSecs } from "../lib/time";
 import { stripHtml } from "../lib/template";
@@ -30,7 +31,16 @@ export function CardInfo({ cid }: { cid: number }) {
     ["Latest Review", reviews.length ? formatDate(reviews[reviews.length - 1].id) : "—"],
     ["Due", due],
     ["Interval", card.type === CardType.Review ? formatDays(card.ivl, false) : "—"],
-    ["Ease", card.factor ? `${card.factor / 10}%` : "—"],
+    ...(card.stability
+      ? ([
+          ["Stability", `${card.stability < 1 ? card.stability.toFixed(2) : card.stability.toFixed(1)} days`],
+          ["Difficulty", `${Math.round(((card.difficulty ?? 5) - 1) / 9 * 100)}%`],
+          [
+            "Recall chance now",
+            `${Math.round(fsrs.retrievability(card.lastReview ? (Date.now() - card.lastReview) / 86400_000 : 0, card.stability) * 100)}%`,
+          ],
+        ] as [string, string][])
+      : ([["Ease", card.factor ? `${card.factor / 10}%` : "—"]] as [string, string][])),
     ["Reviews", card.reps],
     ["Lapses", card.lapses],
     ["Average Time", reviews.length ? `${(totalTime / reviews.length).toFixed(1)}s` : "—"],

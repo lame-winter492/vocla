@@ -82,6 +82,12 @@ export function AddNote({ did: initialDid }: { did?: ID }) {
           </select>
         </label>
       </div>
+      {nt.name === "Vocabulary" && (
+        <p className="small muted" style={{ marginTop: -4 }}>
+          Makes two cards: recognise (word → meaning) and recall (meaning → word). An example sentence gives the word context, which makes it
+          stick.
+        </p>
+      )}
       <NoteEditor key={ntid} note={note} nt={nt} onChange={setNote} dupe={dupe} autoFocus allTags={col.allTags()} />
       <div className="row">
         <button className="primary" onClick={add} title="Ctrl+Enter">

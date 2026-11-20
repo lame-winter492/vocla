@@ -31,6 +31,17 @@ export const CLOZE_CSS = DEFAULT_CSS + `.cloze {
 }
 `;
 
+export const VOCAB_CSS = DEFAULT_CSS + `.word {
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.meaning { font-size: 24px; }
+.example { font-size: 18px; margin-top: 22px; opacity: 0.85; }
+.example-tr { font-size: 16px; margin-top: 6px; opacity: 0.6; }
+.notes { font-size: 15px; margin-top: 16px; opacity: 0.6; }
+`;
+
 /** Earlier stock styling; note types still using it unchanged are upgraded on load. */
 export const LEGACY_DEFAULT_CSS = `.card {
   font-family: arial;
@@ -46,9 +57,10 @@ export const LEGACY_CLOZE_CSS = LEGACY_DEFAULT_CSS + `.cloze {
 }
 `;
 
-export type StockKind = "basic" | "basicReversed" | "basicOptionalReversed" | "basicTyping" | "cloze";
+export type StockKind = "vocabulary" | "basic" | "basicReversed" | "basicOptionalReversed" | "basicTyping" | "cloze";
 
 export const STOCK_NAMES: Record<StockKind, string> = {
+  vocabulary: "Vocabulary",
   basic: "Basic",
   basicReversed: "Basic (and reversed card)",
   basicOptionalReversed: "Basic (optional reversed card)",
@@ -61,6 +73,28 @@ export function stockNoteType(kind: StockKind, name?: string): NoteType {
   const back = "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}";
   const card1 = { name: "Card 1", qfmt: "{{Front}}", afmt: back };
   switch (kind) {
+    case "vocabulary":
+      // Two directions (recognise + recall), an example sentence for context, audio via TTS.
+      return {
+        ...base,
+        kind: "standard",
+        css: VOCAB_CSS,
+        fields: [{ name: "Word" }, { name: "Meaning" }, { name: "Example" }, { name: "Example translation" }, { name: "Notes" }],
+        templates: [
+          {
+            name: "Recognise",
+            qfmt: '<div class="word">{{Word}}</div>\n{{tts auto:Word}}',
+            afmt:
+              '{{FrontSide}}\n\n<hr id=answer>\n\n<div class="meaning">{{Meaning}}</div>\n{{#Example}}<div class="example">{{Example}}</div>{{/Example}}\n{{#Example translation}}<div class="example-tr">{{Example translation}}</div>{{/Example translation}}\n{{#Notes}}<div class="notes">{{Notes}}</div>{{/Notes}}',
+          },
+          {
+            name: "Recall",
+            qfmt: '<div class="meaning">{{Meaning}}</div>\n{{#Example translation}}<div class="example-tr">{{Example translation}}</div>{{/Example translation}}',
+            afmt:
+              '{{FrontSide}}\n\n<hr id=answer>\n\n<div class="word">{{Word}}</div>\n{{tts auto:Word}}\n{{#Example}}<div class="example">{{Example}}</div>{{/Example}}\n{{#Notes}}<div class="notes">{{Notes}}</div>{{/Notes}}',
+          },
+        ],
+      };
     case "basic":
       return { ...base, kind: "standard", fields: [{ name: "Front" }, { name: "Back" }], templates: [card1] };
     case "basicReversed":
@@ -103,10 +137,12 @@ export function defaultDeckConfig(id = 1, name = "Default"): DeckConfig {
     id,
     name,
     mod: Date.now(),
-    new: { perDay: 20, steps: [1, 10], graduatingIvl: 1, easyIvl: 4, initialFactor: 2500, order: "added", bury: false },
-    rev: { perDay: 200, easyBonus: 1.3, hardFactor: 1.2, ivlModifier: 1, maxIvl: 36500, bury: false },
+    // siblings (e.g. word→meaning and meaning→word) are buried so one doesn't give away the other the same day
+    new: { perDay: 20, steps: [1, 10], graduatingIvl: 1, easyIvl: 4, initialFactor: 2500, order: "added", bury: true },
+    rev: { perDay: 200, easyBonus: 1.3, hardFactor: 1.2, ivlModifier: 1, maxIvl: 36500, bury: true },
     lapse: { steps: [10], mult: 0, minIvl: 1, leechThreshold: 8, leechAction: "tag" },
     newMix: "mix",
+    fsrs: { enabled: true, desiredRetention: 0.9 },
     maxAnswerSecs: 60,
     showTimer: false,
     autoplay: true,
@@ -140,7 +176,7 @@ export function newFilteredDeck(id: number, name: string, search: string): Deck 
 
 export function emptyCollection(): Collection {
   const now = Date.now();
-  const nts = (["basic", "basicReversed", "basicOptionalReversed", "basicTyping", "cloze"] as StockKind[]).map((k) =>
+  const nts = (["vocabulary", "basic", "basicReversed", "basicOptionalReversed", "basicTyping", "cloze"] as StockKind[]).map((k) =>
     stockNoteType(k),
   );
   const notetypes: Collection["notetypes"] = {};
@@ -158,6 +194,8 @@ export function emptyCollection(): Collection {
       lastUnburied: dayNumber(now, 4),
       lastNoteType: nts[0].id,
       lastAddDeck: 1,
+      targetLang: "es-ES",
+      haptics: true,
     },
     decks: { 1: newDeck(1, "Default") },
     dconf: { 1: defaultDeckConfig() },

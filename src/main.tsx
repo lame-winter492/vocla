@@ -5,9 +5,10 @@ import "./style.css";
 
 // TTS helper available to card templates ({{tts en_US:Field}})
 (window as any).voclaSpeak = (text: string, lang: string) => {
-  if (!("speechSynthesis" in window)) return;
+  if (!("speechSynthesis" in window) || !text.trim()) return;
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = lang.replace("_", "-");
+  // {{tts auto:Field}} speaks in the language set in Preferences
+  u.lang = (lang === "auto" ? store.col.d.prefs.targetLang : lang).replace("_", "-");
   speechSynthesis.speak(u);
 };
 

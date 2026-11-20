@@ -14,6 +14,7 @@ import {
 import { download } from "../lib/importexport";
 import { store, useCol } from "../lib/store";
 import { useNav } from "./nav";
+import { haptic } from "./haptics";
 
 const speak = (text: string, lang: string) => (window as any).voclaSpeak?.(text, lang);
 
@@ -199,6 +200,7 @@ export function LessonPlayer({ courseId, lessonId }: { courseId: string; lessonI
 
   const submit = (result: Result, correct: string) => {
     if (feedback) return;
+    haptic(result === "wrong" ? "error" : "success");
     setFeedback({ result, correct });
     if (result !== "wrong" && !cur.retry) setFirstTry((n) => n + 1);
   };

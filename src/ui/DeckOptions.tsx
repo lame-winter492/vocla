@@ -111,6 +111,34 @@ export function DeckOptions({ did }: { did: ID }) {
       </div>
 
       <fieldset>
+        <legend>Scheduler</legend>
+        <label>
+          <input type="checkbox" checked={conf.fsrs.enabled} onChange={(e) => upd((c) => (c.fsrs.enabled = e.target.checked))} /> Use FSRS
+          (recommended)
+        </label>
+        <p className="small muted" style={{ margin: "2px 0 8px" }}>
+          FSRS models how well you remember each card and schedules the review just before you&#39;d likely forget it. In large benchmarks it
+          predicts recall far better than the older SM-2 algorithm, which usually means fewer reviews for the same retention.
+        </p>
+        {conf.fsrs.enabled && (
+          <label>
+            Desired retention{" "}
+            <input
+              type="range"
+              min={0.7}
+              max={0.97}
+              step={0.01}
+              value={conf.fsrs.desiredRetention}
+              onChange={(e) => upd((c) => (c.fsrs.desiredRetention = Number(e.target.value)))}
+              style={{ verticalAlign: "middle", width: 160 }}
+            />{" "}
+            <span className="mono">{Math.round(conf.fsrs.desiredRetention * 100)}%</span>
+            <span className="muted small"> · 90% is a good default. Higher = more reviews, lower = more forgetting.</span>
+          </label>
+        )}
+      </fieldset>
+
+      <fieldset>
         <legend>Daily Limits</legend>
         {num("New cards/day", conf.new.perDay, (v) => upd((c) => (c.new.perDay = v)))}
         {num("Maximum reviews/day", conf.rev.perDay, (v) => upd((c) => (c.rev.perDay = v)))}
@@ -122,9 +150,13 @@ export function DeckOptions({ did }: { did: ID }) {
           Learning steps <input value={newSteps} onChange={(e) => setNewSteps(e.target.value)} />
           <span className="muted small"> e.g. "1m 10m" (s, m, h, d)</span>
         </label>
-        {num("Graduating interval (days)", conf.new.graduatingIvl, (v) => upd((c) => (c.new.graduatingIvl = v)))}
-        {num("Easy interval (days)", conf.new.easyIvl, (v) => upd((c) => (c.new.easyIvl = v)))}
-        {num("Starting ease", conf.new.initialFactor / 1000, (v) => upd((c) => (c.new.initialFactor = Math.round(v * 1000))), 0.01)}
+        {!conf.fsrs.enabled && (
+          <>
+            {num("Graduating interval (days)", conf.new.graduatingIvl, (v) => upd((c) => (c.new.graduatingIvl = v)))}
+            {num("Easy interval (days)", conf.new.easyIvl, (v) => upd((c) => (c.new.easyIvl = v)))}
+            {num("Starting ease", conf.new.initialFactor / 1000, (v) => upd((c) => (c.new.initialFactor = Math.round(v * 1000))), 0.01)}
+          </>
+        )}
         <label>
           Insertion order{" "}
           <select value={conf.new.order} onChange={(e) => upd((c) => (c.new.order = e.target.value as "added" | "random"))}>
@@ -139,8 +171,12 @@ export function DeckOptions({ did }: { did: ID }) {
         <label>
           Relearning steps <input value={lapseSteps} onChange={(e) => setLapseSteps(e.target.value)} />
         </label>
-        {num("New interval multiplier", conf.lapse.mult, (v) => upd((c) => (c.lapse.mult = v)), 0.05)}
-        {num("Minimum interval (days)", conf.lapse.minIvl, (v) => upd((c) => (c.lapse.minIvl = v)))}
+        {!conf.fsrs.enabled && (
+          <>
+            {num("New interval multiplier", conf.lapse.mult, (v) => upd((c) => (c.lapse.mult = v)), 0.05)}
+            {num("Minimum interval (days)", conf.lapse.minIvl, (v) => upd((c) => (c.lapse.minIvl = v)))}
+          </>
+        )}
         {num("Leech threshold", conf.lapse.leechThreshold, (v) => upd((c) => (c.lapse.leechThreshold = v)))}
         <label>
           Leech action{" "}
@@ -187,9 +223,13 @@ export function DeckOptions({ did }: { did: ID }) {
       <fieldset>
         <legend>Advanced</legend>
         {num("Maximum interval (days)", conf.rev.maxIvl, (v) => upd((c) => (c.rev.maxIvl = v)))}
-        {num("Easy bonus", conf.rev.easyBonus, (v) => upd((c) => (c.rev.easyBonus = v)), 0.05)}
-        {num("Interval modifier", conf.rev.ivlModifier, (v) => upd((c) => (c.rev.ivlModifier = v)), 0.05)}
-        {num("Hard interval", conf.rev.hardFactor, (v) => upd((c) => (c.rev.hardFactor = v)), 0.05)}
+        {!conf.fsrs.enabled && (
+          <>
+            {num("Easy bonus", conf.rev.easyBonus, (v) => upd((c) => (c.rev.easyBonus = v)), 0.05)}
+            {num("Interval modifier", conf.rev.ivlModifier, (v) => upd((c) => (c.rev.ivlModifier = v)), 0.05)}
+            {num("Hard interval", conf.rev.hardFactor, (v) => upd((c) => (c.rev.hardFactor = v)), 0.05)}
+          </>
+        )}
       </fieldset>
 
       <div className="row">
