@@ -53,9 +53,12 @@ npm run build    # typecheck + production build
   - Plain-text CSV/TSV, using Anki's `#separator:`, `#html:`, `#tags column:`, `#deck:` and `#notetype:` headers. You choose the field mapping and how duplicates are handled.
   - Deck packages with or without scheduling.
   - Full collection backup and restore.
+- **Courses** (Duolingo-style): courses → units → lessons, unlocked in order. There are 5 exercise types: multiple choice, translate (typed or word bank), match pairs, listen & type (TTS), and fill in the blank. Mistakes come back at the end of the lesson. You get XP, a streak and best accuracy, and a lesson's words can go to a deck for spaced repetition. Courses are imported as JSON; the format is in [docs/course-format.md](docs/course-format.md).
 - **Tools**: undo/redo with Ctrl+Z / Ctrl+Shift+Z, Check Database, Empty Cards, and preferences for day rollover, learn-ahead and display.
 
 Not done yet: importing Anki `.apkg` files, sync, the FSRS scheduler, and media files (images can be added as `<img src="https://...">`).
+
+AI ideas (not implemented yet): [docs/ai-ideas.md](docs/ai-ideas.md).
 
 ## Layout
 

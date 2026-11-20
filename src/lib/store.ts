@@ -151,6 +151,8 @@ function migrate(data: Collection): Collection {
   const base = emptyCollection();
   data.prefs = { ...base.prefs, ...data.prefs };
   data.savedSearches = data.savedSearches ?? {};
+  data.courses = data.courses ?? base.courses;
+  data.courseProgress = data.courseProgress ?? base.courseProgress;
   data.revlog = data.revlog ?? [];
   if (!data.dconf[1]) data.dconf[1] = base.dconf[1];
   if (!data.decks[1]) data.decks[1] = base.decks[1];

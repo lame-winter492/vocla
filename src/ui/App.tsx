@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { store, useCol } from "../lib/store";
 import { AddNote } from "./AddNote";
 import { Browser } from "./Browser";
+import { Courses, CourseView, LessonPlayer } from "./Courses";
 import { CustomStudy } from "./CustomStudy";
 import { DeckList } from "./DeckList";
 import { DeckOptions } from "./DeckOptions";
@@ -32,7 +33,7 @@ export function App() {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
       const typing = t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable;
-      if (route.name === "study") return; // reviewer handles its own keys
+      if (route.name === "study" || route.name === "lesson") return; // these screens handle their own keys
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z" && !typing) {
         e.preventDefault();
         const l = e.shiftKey ? store.redo() : store.undo();
@@ -99,12 +100,22 @@ export function App() {
     case "prefs":
       page = <Prefs />;
       break;
+    case "courses":
+      page = <Courses />;
+      break;
+    case "course":
+      page = <CourseView id={route.id} />;
+      break;
+    case "lesson":
+      page = <LessonPlayer key={route.lessonId} courseId={route.courseId} lessonId={route.lessonId} />;
+      break;
   }
 
   return (
     <Nav.Provider value={{ go, toast, route }}>
       <div className="topbar">
         {tab("Decks", { name: "decks" }, ["decks", "overview", "study", "options", "filtered", "custom"])}
+        {tab("Courses", { name: "courses" }, ["courses", "course", "lesson"])}
         {tab("Add", { name: "add" }, ["add"])}
         {tab("Browse", { name: "browse" }, ["browse"])}
         {tab("Stats", { name: "stats" }, ["stats"])}

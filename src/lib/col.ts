@@ -2,7 +2,8 @@
 import { answerCard, nextIntervalSecs, type SchedCtx } from "./scheduler";
 import { searchCards } from "./search";
 import { defaultDeckConfig, newDeck, newFilteredDeck, newGuid, newId } from "./stock";
-import { clozeNumbers, render, stripHtml, templateNonEmpty } from "./template";
+import type { VocabItem } from "./courses";
+import { clozeNumbers, escapeHtml, render, stripHtml, templateNonEmpty } from "./template";
 import { dayNumber } from "./time";
 import {
   CardType,
@@ -850,6 +851,46 @@ export class Col {
     for (const d of Object.values(this.d.decks)) if (!d.dyn && !this.d.dconf[d.confId]) d.confId = 1;
     if (!msgs.length) msgs.push("Database rebuilt and optimized. No problems found.");
     return msgs;
+  }
+
+  // ---------- courses ----------
+  /** Record a finished lesson. Returns XP earned. */
+  completeLesson(courseId: string, lessonId: string, accuracy: number): number {
+    const p = this.d.courseProgress;
+    const byCourse = (p.lessons[courseId] ??= {});
+    const prev = byCourse[lessonId];
+    const xp = Math.round(10 + 5 * accuracy) + (prev ? 0 : 5);
+    byCourse[lessonId] = { best: Math.max(prev?.best ?? 0, accuracy), times: (prev?.times ?? 0) + 1, last: this.now() };
+    p.xp += xp;
+    const today = this.today();
+    if (!p.days.includes(today)) p.days.push(today);
+    return xp;
+  }
+
+  /** Add a lesson's vocab to "Courses::<course>" as two-way cards. Skips words already there. */
+  addVocabToDeck(courseTitle: string, vocab: VocabItem[], tag: string): number {
+    const nt =
+      this.notetypes().find((n) => n.name === "Basic (and reversed card)") ?? this.notetypes().find((n) => n.kind === "standard");
+    if (!nt) return 0;
+    const deck = this.addDeck(`Courses::${courseTitle}`);
+    const have = new Set(
+      Object.values(this.d.notes)
+        .filter((n) => n.ntid === nt.id)
+        .map((n) => stripHtml(n.fields[0] ?? "").trim().toLowerCase()),
+    );
+    let added = 0;
+    for (const v of vocab) {
+      if (have.has(v.word.trim().toLowerCase())) continue;
+      const note = this.newNote(nt);
+      note.fields[0] = escapeHtml(v.word);
+      note.fields[1] = escapeHtml(v.translation) + (v.note ? `<br><small>${escapeHtml(v.note)}</small>` : "");
+      note.tags = [tag];
+      if (this.addNote(note, deck.id)) {
+        added++;
+        have.add(v.word.trim().toLowerCase());
+      }
+    }
+    return added;
   }
 
   // ---------- deck tree ----------

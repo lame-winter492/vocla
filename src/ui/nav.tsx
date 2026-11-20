@@ -14,7 +14,10 @@ export type Route =
   | { name: "custom"; did: ID }
   | { name: "import" }
   | { name: "export"; did?: ID }
-  | { name: "prefs" };
+  | { name: "prefs" }
+  | { name: "courses" }
+  | { name: "course"; id: string }
+  | { name: "lesson"; courseId: string; lessonId: string };
 
 export interface NavCtx {
   go: (r: Route) => void;

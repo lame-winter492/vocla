@@ -1,4 +1,5 @@
 // Core data model. Modelled closely on Anki's collection structure.
+import type { Course, CourseProgress } from "./courses";
 
 export type ID = number;
 
@@ -185,6 +186,8 @@ export interface Collection {
   revlog: RevlogEntry[];
   nextPos: number;
   savedSearches: Record<string, string>;
+  courses: Record<string, Course>;
+  courseProgress: CourseProgress;
 }
 
 export type Ease = 1 | 2 | 3 | 4;

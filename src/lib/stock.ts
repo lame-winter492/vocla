@@ -1,5 +1,6 @@
 import type { Collection, Deck, DeckConfig, NoteType } from "./types";
 import { dayNumber } from "./time";
+import { emptyProgress, SAMPLE_COURSE } from "./courses";
 
 let lastId = 0;
 /** Unique, roughly time-ordered ids (like Anki's). */
@@ -153,5 +154,7 @@ export function emptyCollection(): Collection {
     revlog: [],
     nextPos: 1,
     savedSearches: {},
+    courses: { [SAMPLE_COURSE.id]: structuredClone(SAMPLE_COURSE) },
+    courseProgress: emptyProgress(),
   };
 }
