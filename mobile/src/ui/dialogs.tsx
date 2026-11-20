@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
 import { haptic } from './feedback';
 import { Button, T } from './kit';
+import { Surface } from './material';
 
 export interface SheetAction {
   title: string;
@@ -112,14 +113,9 @@ export function DialogHost() {
           pointerEvents="box-none"
           style={[styles.bannerWrap, { top: insets.top + 6 }]}
         >
-          <View
-            accessibilityRole="alert"
-            style={[
-              styles.banner,
-              { backgroundColor: t.design === 'glass' ? (t.dark ? '#2c2c2e' : '#ffffff') : '#ece9e4', shadowColor: '#000' },
-            ]}
-          >
-            <T v="subhead" weight={600} color={t.design === 'glass' ? t.c.fg : '#15181d'} style={{ flexShrink: 1 }}>
+          <View accessibilityRole="alert" style={[styles.bannerShadow, { shadowColor: '#000' }]}>
+           <Surface radius={26} strong style={styles.banner}>
+            <T v="subhead" weight={600} style={{ flexShrink: 1 }}>
               {b.text}
             </T>
             {b.action ? (
@@ -132,11 +128,12 @@ export function DialogHost() {
                 }}
                 hitSlop={10}
               >
-                <T v="subhead" weight={700} color={t.design === 'glass' ? t.c.accent : '#8a5a00'}>
+                <T v="subhead" weight={700} color="accent">
                   {b.action.label}
                 </T>
               </Pressable>
             ) : null}
+           </Surface>
           </View>
         </Animated.View>
       ) : null}
@@ -150,10 +147,12 @@ export function DialogHost() {
               <Animated.View
                 entering={SlideInDown.springify().damping(18).stiffness(180)}
                 exiting={SlideOutDown.duration(180)}
-                style={[styles.sheet, { backgroundColor: t.c.surface, paddingBottom: insets.bottom + 12, borderColor: t.c.line }]}
+                style={styles.sheetWrap}
               >
-                <View style={[styles.grabber, { backgroundColor: t.c.faint }]} />
-                <SheetBody p={p} />
+                <Surface radius={34} strong style={[styles.sheet, { paddingBottom: insets.bottom + 12 }]}>
+                  <View style={[styles.grabber, { backgroundColor: t.c.faint }]} />
+                  <SheetBody p={p} />
+                </Surface>
               </Animated.View>
             </KeyboardAvoidingView>
           </View>
@@ -249,26 +248,15 @@ function SheetBody({ p }: { p: Pending }) {
 
 const styles = StyleSheet.create({
   bannerWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 1000 },
+  bannerShadow: { borderRadius: 26, shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 8, maxWidth: '92%' },
   banner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
     paddingHorizontal: 18,
     paddingVertical: 12,
-    borderRadius: 26,
-    maxWidth: '92%',
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
   },
-  sheet: {
-    marginHorizontal: 8,
-    marginBottom: 8,
-    borderRadius: 30,
-    padding: 18,
-    paddingTop: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
+  sheetWrap: { marginHorizontal: 8, marginBottom: 8 },
+  sheet: { padding: 18, paddingTop: 10 },
   grabber: { alignSelf: 'center', width: 36, height: 5, borderRadius: 3, marginBottom: 12, opacity: 0.6 },
 });

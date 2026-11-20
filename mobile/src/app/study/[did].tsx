@@ -31,6 +31,7 @@ import { confirm, showActions, toast } from '@/ui/dialogs';
 import { haptic, speakAll, stopSpeaking } from '@/ui/feedback';
 import { Button, PressScale, T } from '@/ui/kit';
 import { useNow } from '@/ui/useNow';
+import { Backdrop, Surface } from '@/ui/material';
 import { GlassCircle, RollingNumber } from '@/ui/widgets';
 
 const SWIPE = 96;
@@ -44,7 +45,6 @@ export default function Study() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { width: W } = useWindowDimensions();
-  const glass = t.design === 'glass';
 
   const [current, setCurrent] = useState<QueuedCard | null>(() => store.col.getNextCard(did));
   const [showAnswer, setShowAnswer] = useState(false);
@@ -258,7 +258,8 @@ export default function Study() {
   if (!card || !content) {
     const nextLearn = col.nextLearnDue(did);
     return (
-      <View style={[styles.fill, { backgroundColor: t.c.bg, paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.fill, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 16 }]}>
+        <Backdrop />
         <View style={[styles.head, { paddingHorizontal: 16 }]}>
           <GlassCircle Icon={X} label="Close" onPress={close} size={42} testID="close-study" />
         </View>
@@ -266,7 +267,7 @@ export default function Study() {
           <T v="subhead" color="muted">
             {answered > 0 ? `${answered} card${answered === 1 ? '' : 's'} reviewed this session` : 'Nothing to study here right now'}
           </T>
-          <T style={[{ fontSize: 56, lineHeight: 62 }, glass ? { fontWeight: '700', ...roundedFont, color: t.c.accent } : { ...t.font(600), letterSpacing: -2 }]}>
+          <T style={[{ fontSize: 56, lineHeight: 62 }, { fontWeight: '700', ...roundedFont, color: t.c.accent }]}>
             Done
           </T>
           <T v="title3" weight={400} color="fg2">
@@ -295,7 +296,8 @@ export default function Study() {
   const easeColor = [t.c.again, t.c.hard, t.c.good, t.c.easy];
 
   return (
-    <View style={[styles.fill, { backgroundColor: t.c.bg, paddingTop: insets.top + 8 }]} testID="reviewer">
+    <View style={[styles.fill, { paddingTop: insets.top + 8 }]} testID="reviewer">
+      <Backdrop />
       {/* header: close, progress, count, tools */}
       <View style={[styles.head, { paddingHorizontal: 14 }]}>
         <GlassCircle Icon={X} label="End session" onPress={close} size={42} testID="close-study" />
@@ -335,15 +337,11 @@ export default function Study() {
       <View style={styles.cardArea}>
         <GestureDetector gesture={pan}>
           <Animated.View
-            style={[
-              styles.card,
-              glass
-                ? { backgroundColor: t.c.surface, shadowColor: '#000', borderRadius: 30 }
-                : { backgroundColor: 'transparent' },
-              cardStyle,
-            ]}
+            style={[styles.card, { shadowColor: '#000' }, cardStyle]}
           >
-            <CardView ref={cardView} content={content} onMessage={onCardMessage} style={{ borderRadius: glass ? 30 : 0 }} />
+            <Surface radius={32} strong style={{ flex: 1 }}>
+              <CardView ref={cardView} content={content} onMessage={onCardMessage} style={{ borderRadius: 32 }} />
+            </Surface>
             <Animated.View pointerEvents="none" style={[styles.stamp, styles.stampGood, { borderColor: t.c.good }, goodStamp]}>
               <T v="headline" weight={700} color="good">
                 Good
@@ -389,21 +387,18 @@ export default function Study() {
                     accessibilityRole="button"
                     accessibilityLabel={`${LABELS[e - 1]}${ivls ? `, ${formatIvlSecs(ivls[e])}` : ''}`}
                     testID={`ease-${e}`}
-                    style={[
-                      styles.ease,
-                      glass
-                        ? { backgroundColor: t.c.surface, borderRadius: 22, shadowColor: '#000', borderWidth: e === 3 ? 2 : 0, borderColor: t.c.good }
-                        : { backgroundColor: t.c.surface, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, borderColor: e === 3 ? t.c.accent : t.c.line },
-                    ]}
+                    style={{ flex: 1, borderRadius: 24, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }}
                   >
-                    <T v="callout" weight={600} color={glass ? easeColor[e - 1] : 'fg'}>
-                      {LABELS[e - 1]}
-                    </T>
-                    {col.d.prefs.showIntervalsOnButtons && ivls ? (
-                      <T v="caption" color="muted" style={t.mono}>
-                        {ivls[e] === 0 ? 'end' : formatIvlSecs(ivls[e])}
+                    <Surface radius={24} interactive strong style={[styles.ease, e === 3 ? { borderWidth: 2, borderColor: t.c.good } : null]}>
+                      <T v="callout" weight={600} color={easeColor[e - 1]}>
+                        {LABELS[e - 1]}
                       </T>
-                    ) : null}
+                      {col.d.prefs.showIntervalsOnButtons && ivls ? (
+                        <T v="caption" color="muted" style={t.mono}>
+                          {ivls[e] === 0 ? 'end' : formatIvlSecs(ivls[e])}
+                        </T>
+                      ) : null}
+                    </Surface>
                   </PressScale>
                 </Animated.View>
               ))}
@@ -435,9 +430,9 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   count: { fontSize: 15, lineHeight: 20 },
   cardArea: { flex: 1, paddingHorizontal: 16, paddingVertical: 14 },
-  card: { flex: 1, overflow: 'visible', shadowOpacity: 0.08, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 3 },
+  card: { flex: 1, borderRadius: 32, shadowOpacity: 0.14, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 3 },
   stamp: { position: 'absolute', top: 22, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 14, borderWidth: 2.5 },
   stampGood: { left: 22, transform: [{ rotate: '-8deg' }] },
   stampAgain: { right: 22, transform: [{ rotate: '8deg' }] },
-  ease: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
+  ease: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
 });

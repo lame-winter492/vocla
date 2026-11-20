@@ -19,11 +19,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { checkAnswer, choiceAnswer, lessonExercises, type Exercise } from '@core/courses';
 import { store, useCol } from '@core/store';
-import { roundedFont, useTheme } from '@/theme';
+import { useTheme } from '@/theme';
 import { confirm, toast } from '@/ui/dialogs';
 import { haptic, speak, stopSpeaking } from '@/ui/feedback';
 import { shuffled } from '@/ui/useNow';
 import { Button, PressScale, T } from '@/ui/kit';
+import { Backdrop, Surface } from '@/ui/material';
 import { GlassCircle, Ring, RollingNumber } from '@/ui/widgets';
 
 type Result = 'correct' | 'accent' | 'wrong';
@@ -37,7 +38,6 @@ type Submit = (r: Result, correct: string) => void;
 export default function Lesson() {
   const { courseId, lessonId } = useLocalSearchParams<{ courseId: string; lessonId: string }>();
   const col = useCol();
-  const t = useTheme();
   const insets = useSafeAreaInsets();
   const course = col.d.courses[courseId];
   const lesson = course?.units.flatMap((u) => u.lessons).find((l) => l.id === lessonId);
@@ -85,7 +85,8 @@ export default function Lesson() {
   if (!cur) return <T style={{ padding: 40 }}>This lesson has no exercises.</T>;
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.c.bg, paddingTop: insets.top + 8 }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, paddingTop: insets.top + 8 }}>
+      <Backdrop />
       <View style={styles.head}>
         <GlassCircle
           Icon={X}
@@ -173,17 +174,16 @@ function Option({ label, state, onPress, disabled, testID }: { label: string; st
         accessibilityLabel={label}
         accessibilityState={{ selected: state === 'selected', disabled }}
         testID={testID}
-        style={{
-          minHeight: 54,
-          justifyContent: 'center',
-          paddingHorizontal: 16,
-          borderRadius: t.design === 'glass' ? 16 : t.radius.md,
-          backgroundColor: state === 'correct' ? `${t.c.good}22` : state === 'wrong' ? `${t.c.again}22` : t.c.surface,
-          borderWidth: state && state !== 'matched' ? 2 : StyleSheet.hairlineWidth,
-          borderColor: border,
-        }}
+        style={{ borderRadius: 20 }}
       >
-        <T>{label}</T>
+        <Surface
+          radius={20}
+          interactive
+          tint={state === 'correct' ? `${t.c.good}44` : state === 'wrong' ? `${t.c.again}44` : undefined}
+          style={[{ minHeight: 56, justifyContent: 'center', paddingHorizontal: 18 }, state && state !== 'matched' ? { borderWidth: 2, borderColor: border } : null]}
+        >
+          <T>{label}</T>
+        </Surface>
       </PressScale>
     </Animated.View>
   );
@@ -415,9 +415,10 @@ function FeedbackPanel({ fb, onContinue, bottom }: { fb: { result: Result; corre
     <Animated.View
       entering={SlideInDown.springify().damping(18).stiffness(200)}
       exiting={SlideOutDown.duration(160)}
-      style={[styles.panel, { paddingBottom: bottom + 16, backgroundColor: t.design === 'glass' ? (t.dark ? '#1c1c1e' : '#ffffff') : t.c.raised, borderTopColor: color }]}
+      style={[styles.panel, { bottom: bottom + 8 }]}
       accessibilityLiveRegion="polite"
     >
+     <Surface radius={32} strong style={{ padding: 20, borderWidth: 2, borderColor: color }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Icon size={28} color={color} strokeWidth={2.4} />
         <T v="title3" color={color}>
@@ -430,6 +431,7 @@ function FeedbackPanel({ fb, onContinue, bottom }: { fb: { result: Result; corre
         </T>
       ) : null}
       <Button title="Continue" kind="primary" size="lg" style={[{ marginTop: 16 }, { backgroundColor: color, shadowColor: color }]} onPress={onContinue} testID="continue" />
+    </Surface>
     </Animated.View>
   );
 }
@@ -443,10 +445,11 @@ function Complete({ done, vocabCount, courseTitle, onClose, onAddWords }: { done
     return () => clearTimeout(id);
   }, [done.xp]);
   return (
-    <View style={{ flex: 1, backgroundColor: t.c.bg, paddingTop: insets.top + 40, paddingBottom: insets.bottom + 16, paddingHorizontal: 24 }}>
+    <View style={{ flex: 1, paddingTop: insets.top + 40, paddingBottom: insets.bottom + 16, paddingHorizontal: 24 }}>
+      <Backdrop />
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10 }} accessibilityLabel={`Lesson complete. ${Math.round(done.accuracy * 100)}% accuracy, ${done.xp} XP`}>
         <Ring value={done.accuracy} size={150} stroke={16} color={t.c.good} delay={250}>
-          <T v="title1" rounded style={t.design === 'glass' ? roundedFont : undefined}>
+          <T v="title1" rounded>
             {Math.round(done.accuracy * 100)}%
           </T>
         </Ring>
@@ -477,18 +480,5 @@ function Complete({ done, vocabCount, courseTitle, onClose, onAddWords }: { done
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16 },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  panel: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: 20,
-    borderTopWidth: 3,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
-  },
+  panel: { position: 'absolute', left: 8, right: 8, borderRadius: 32, shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
 });

@@ -16,7 +16,7 @@ export const CardView = forwardRef<CardViewHandle, { content: CardContent; onMes
     const t = useTheme();
     const frame = useRef<HTMLIFrameElement | null>(null);
     const first = useRef(content);
-    const doc = useMemo(() => cardDocument(t, first.current), [t.design, t.dark]); // eslint-disable-line react-hooks/exhaustive-deps
+    const doc = useMemo(() => cardDocument(t, first.current), [t.look, t.dark]); // eslint-disable-line react-hooks/exhaustive-deps
     const shown = useRef(content);
     const ready = useRef(false);
     const onMsg = useRef(onMessage);

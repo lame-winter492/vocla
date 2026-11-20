@@ -1,8 +1,7 @@
 // Small animated pieces: rolling digits, progress rings, Liquid Glass circle buttons.
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import type { LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -19,6 +18,7 @@ import Svg, { Circle } from 'react-native-svg';
 
 import { useTheme } from '@/theme';
 import { PressScale } from './kit';
+import { Surface } from './material';
 
 /** Digits roll up (count grew) or down (count shrank), like iOS's numeric text transition. */
 export function RollingNumber({ value, style }: { value: number; style?: StyleProp<TextStyle> }) {
@@ -88,9 +88,8 @@ export function Ring({ value, size = 40, stroke = 3.5, color, track, delay = 150
   );
 }
 
-const glassOK = Platform.OS === 'ios' && isLiquidGlassAvailable();
 
-/** A floating circular control: real Liquid Glass on iOS 26 (lights up under the finger), a raised disc elsewhere. */
+/** A floating circular control made of the current material (Liquid Glass lights up and flexes under the finger). */
 export function GlassCircle({ Icon, onPress, label, size = 44, style, testID }: {
   Icon: LucideIcon;
   onPress: () => void;
@@ -100,26 +99,14 @@ export function GlassCircle({ Icon, onPress, label, size = 44, style, testID }: 
   testID?: string;
 }) {
   const t = useTheme();
-  const icon = <Icon size={size * 0.46} color={t.design === 'glass' ? t.c.fg : t.c.fg2} strokeWidth={2} />;
-  const shape = { width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center' } as const;
   return (
-    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={label} testID={testID} scaleTo={t.design === 'glass' ? 1.08 : 0.94} style={style}>
-      {glassOK && t.design === 'glass' ? (
-        <GlassView isInteractive glassEffectStyle="regular" style={shape}>
-          {icon}
-        </GlassView>
-      ) : (
-        <View
-          style={[
-            shape,
-            t.design === 'glass'
-              ? { backgroundColor: t.dark ? 'rgba(44,44,46,0.9)' : 'rgba(255,255,255,0.9)', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 3 }
-              : { backgroundColor: t.c.raised, borderWidth: StyleSheet.hairlineWidth, borderColor: t.c.line },
-          ]}
-        >
-          {icon}
+    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={label} testID={testID} scaleTo={t.look === 'liquid' ? 1.1 : 0.94} style={[{ borderRadius: size / 2, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } }, style]}>
+      <Surface radius={size / 2} interactive style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+        {/* wrapped so it stacks above the material's blur layer on the web */}
+        <View>
+          <Icon size={size * 0.46} color={t.c.fg} strokeWidth={2} />
         </View>
-      )}
+      </Surface>
     </PressScale>
   );
 }

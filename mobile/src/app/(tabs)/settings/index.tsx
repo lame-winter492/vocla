@@ -4,10 +4,11 @@ import { Check } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { store, useCol } from '@core/store';
-import { currentDesign, useTheme } from '@/theme';
+import { currentLook, useTheme, type Look } from '@/theme';
 import { showActions, toast } from '@/ui/dialogs';
 import { haptic } from '@/ui/feedback';
 import { Group, PressScale, Row, Screen, T } from '@/ui/kit';
+import { Backdrop, Surface } from '@/ui/material';
 
 const LANGS: [string, string][] = [
   ['es-ES', 'Spanish'],
@@ -28,39 +29,39 @@ export default function Settings() {
   const col = useCol();
   const t = useTheme();
   const prefs = col.d.prefs;
-  const design = currentDesign(prefs.design);
+  const look = currentLook(prefs.nativeLook);
   const set = (fn: () => void) => store.mutate(fn);
 
-  const designCard = (d: 'glass' | 'focus', title: string, sub: string, swatch: [string, string]) => (
+  // each option is a live sample of its material over the same soft light the app uses
+  const lookCard = (l: Look, title: string, sub: string) => (
     <PressScale
       onPress={() => {
         haptic.select();
-        set(() => (prefs.design = d));
+        set(() => (prefs.nativeLook = l));
       }}
       accessibilityRole="radio"
-      accessibilityState={{ checked: design === d }}
+      accessibilityState={{ checked: look === l }}
       accessibilityLabel={title}
-      testID={`design-${d}`}
-      style={{
-        flex: 1,
-        padding: 12,
-        borderRadius: 18,
-        backgroundColor: t.c.surface,
-        borderWidth: 2,
-        borderColor: design === d ? t.c.accent : 'transparent',
-        gap: 8,
-      }}
+      testID={`look-${l}`}
+      style={{ flex: 1, gap: 8 }}
     >
-      <View style={{ height: 64, borderRadius: 12, backgroundColor: swatch[0], alignItems: 'center', justifyContent: 'center' }}>
-        <View style={{ width: 54, height: 18, borderRadius: 9, backgroundColor: swatch[1] }} />
+      <View style={{ height: 110, borderRadius: 20, overflow: 'hidden', borderWidth: 2, borderColor: look === l ? t.c.accent : 'transparent' }}>
+        <Backdrop />
+        <View style={{ position: 'absolute', left: 22, top: 18, width: 46, height: 46, borderRadius: 23, backgroundColor: '#ff9f0a' }} />
+        <View style={{ position: 'absolute', right: 18, top: 30, width: 60, height: 22, borderRadius: 11, backgroundColor: '#30d158' }} />
+        <Surface look={l} radius={22} style={{ position: 'absolute', left: 12, right: 12, bottom: 12, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+          <T v="footnote" weight={600}>
+            {l === 'liquid' ? 'Glass' : 'Frost'}
+          </T>
+        </Surface>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 4 }}>
         <T v="subhead" weight={600} style={{ flex: 1 }}>
           {title}
         </T>
-        {design === d ? <Check size={16} color={t.c.accent} strokeWidth={2.6} /> : null}
+        {look === l ? <Check size={16} color={t.c.accent} strokeWidth={2.6} /> : null}
       </View>
-      <T v="caption" color="muted">
+      <T v="caption" color="muted" style={{ paddingHorizontal: 4 }}>
         {sub}
       </T>
     </PressScale>
@@ -69,10 +70,10 @@ export default function Settings() {
   return (
     <Screen>
       <Stack.Screen options={{ title: 'Settings' }} />
-      <Group header="Appearance" footer="Liquid Glass follows your light or dark appearance. Focus is always dark.">
-        <View style={{ flexDirection: 'row', gap: 10, padding: 10 }}>
-          {designCard('glass', 'Liquid Glass', 'Like a built-in iOS app', ['#f2f2f7', '#007aff'])}
-          {designCard('focus', 'Focus', "Vocla's dark, amber look", ['#0f1115', '#f2b84b'])}
+      <Group header="Appearance" footer="Both follow your light or dark appearance. Liquid Glass bends and lights up what is behind it (iOS 26); Frosted is the soft blur of earlier iOS.">
+        <View style={{ flexDirection: 'row', gap: 12, padding: 12 }}>
+          {lookCard('liquid', 'Liquid Glass', 'Clear, refractive glass')}
+          {lookCard('frosted', 'Frosted', 'Soft frosted material')}
         </View>
       </Group>
 

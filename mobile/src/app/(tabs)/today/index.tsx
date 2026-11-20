@@ -14,6 +14,7 @@ import { roundedFont, useTheme } from '@/theme';
 import { DeckRow } from '@/ui/DeckRow';
 import { askText } from '@/ui/dialogs';
 import { Button, Monogram, PressScale, T } from '@/ui/kit';
+import { Backdrop, Surface } from '@/ui/material';
 import { useNow } from '@/ui/useNow';
 import { GlassCircle, Ring, RollingNumber } from '@/ui/widgets';
 
@@ -21,7 +22,6 @@ export default function Today() {
   const col = useCol();
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const glass = t.design === 'glass';
   const now = useNow(15000);
 
   const all = col.counts(ALL_DECKS);
@@ -63,59 +63,39 @@ export default function Today() {
   };
 
   const card = (
-    <View
-      style={
-        glass
-          ? [styles.story, { backgroundColor: t.c.surface, shadowColor: '#000' }]
-          : { paddingVertical: 8, gap: 2 }
-      }
-    >
-      {glass ? (
+    <View style={styles.storyShadow}>
+      <Surface radius={30} strong style={styles.story}>
         <T v="footnote" weight={600} color="accent" style={styles.caps}>
           {total > 0 ? 'Daily review' : nextLesson ? 'Continue learning' : 'All caught up'}
         </T>
-      ) : (
-        <T v="footnote" color="muted">
-          {[new Date().toLocaleDateString(undefined, { weekday: 'long' }), days > 0 && `${days}-day streak`, doneToday > 0 && `${doneToday} done`].filter(Boolean).join(' · ')}
-        </T>
-      )}
-      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 12, marginTop: 4 }}>
-        <RollingNumber
-          value={total}
-          style={[
-            glass ? { fontSize: 64, lineHeight: 72, fontWeight: '700', color: t.c.accent, ...roundedFont } : { fontSize: 92, lineHeight: 100, color: t.c.fg, ...t.font(600), letterSpacing: -4 },
-          ]}
-        />
-        <T v={glass ? 'headline' : 'title3'} weight={glass ? 500 : 400} color={glass ? 'fg' : 'fg2'}>
-          {total === 1 ? 'card for today' : total ? 'cards for today' : 'cards left today'}
-        </T>
-      </View>
-      <T v="subhead" color="muted" style={[!glass && t.mono, { marginBottom: 14 }]}>
-        {total > 0
-          ? `${all.reviewCount} due · ${all.learnCount} learning · ${all.newCount} new · about ${minutes} min`
-          : nextLearn
-            ? `Next learning card in ${formatIvlSecs(Math.max(0, (nextLearn - now) / 1000), false)}.`
-            : "You're done for today."}
-      </T>
-      {heroHref ? (
-        // the whole card is the button; this is just its label
-        <View pointerEvents="none">
-          <Button
-            title={total > 0 ? 'Start session' : 'Continue course'}
-            kind="primary"
-            size="lg"
-            icon={<ArrowRight size={19} color={t.c.onAccent} strokeWidth={2.4} />}
-            style={glass ? undefined : { alignSelf: 'flex-start' }}
-          />
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 12, marginTop: 4 }}>
+          <RollingNumber value={total} style={{ fontSize: 64, lineHeight: 72, fontWeight: '700', color: t.c.accent, ...roundedFont }} />
+          <T v="headline" weight={500}>
+            {total === 1 ? 'card for today' : total ? 'cards for today' : 'cards left today'}
+          </T>
         </View>
-      ) : (
-        <Button title="Add cards" size="lg" onPress={() => router.push('/add')} style={glass ? undefined : { alignSelf: 'flex-start' }} />
-      )}
+        <T v="subhead" color="muted" style={{ marginBottom: 14 }}>
+          {total > 0
+            ? `${all.reviewCount} due · ${all.learnCount} learning · ${all.newCount} new · about ${minutes} min`
+            : nextLearn
+              ? `Next learning card in ${formatIvlSecs(Math.max(0, (nextLearn - now) / 1000), false)}.`
+              : "You're done for today."}
+        </T>
+        {heroHref ? (
+          // the whole card is the button; this is just its label
+          <View pointerEvents="none">
+            <Button title={total > 0 ? 'Start session' : 'Continue course'} kind="primary" size="lg" icon={<ArrowRight size={19} color={t.c.onAccent} strokeWidth={2.4} />} />
+          </View>
+        ) : (
+          <Button title="Add cards" size="lg" onPress={() => router.push('/add')} />
+        )}
+      </Surface>
     </View>
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.c.bg }}>
+    <View style={{ flex: 1 }}>
+      <Backdrop />
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView contentContainerStyle={{ paddingTop: insets.top + 12, paddingHorizontal: 16, paddingBottom: 140 }} testID="today">
         {/* App Store header */}
@@ -130,7 +110,7 @@ export default function Today() {
           </View>
           <GlassCircle Icon={Plus} label="Add card" onPress={() => router.push('/add')} size={40} testID="add-card" />
           <PressScale onPress={() => router.push('/stats')} accessibilityRole="button" accessibilityLabel={`${days}-day streak, ${doneToday} reviewed today. Statistics`}>
-            <Ring value={doneToday + total > 0 ? doneToday / (doneToday + total) : 0} size={40} track={glass ? t.c.pill : t.c.line}>
+            <Ring value={doneToday + total > 0 ? doneToday / (doneToday + total) : 0} size={40} track={t.c.pill}>
               <T v="subhead" weight={700} rounded style={t.mono}>
                 {days}
               </T>
@@ -143,7 +123,7 @@ export default function Today() {
           <Link href={heroHref} asChild>
             <Link.AppleZoom>
               <PressScale
-                scaleTo={glass ? 0.965 : 0.98}
+                scaleTo={0.965}
                 accessibilityRole="button"
                 accessibilityLabel={total > 0 ? `Start session, ${total} cards` : 'Continue course'}
                 testID="start-session"
@@ -170,11 +150,11 @@ export default function Today() {
             </T>
           </View>
         </View>
-        <View style={[styles.list, { backgroundColor: t.c.surface, borderRadius: glass ? 22 : t.radius.lg, borderWidth: glass ? 0 : StyleSheet.hairlineWidth, borderColor: t.c.line }]}>
+        <Surface radius={26} strong>
           {rows.map(({ node }, i) => (
             <DeckRow key={node.deck.id} node={node} first={i === 0} />
           ))}
-        </View>
+        </Surface>
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
           <Button title="New deck" kind="tinted" size="sm" onPress={newDeck} testID="new-deck" />
           <Button title="Import" kind="tinted" size="sm" onPress={() => router.push('/settings/data')} />
@@ -210,7 +190,7 @@ export default function Today() {
       </ScrollView>
       {/* status bar scroll edge: content softens as it passes under the clock */}
       {Platform.OS !== 'android' ? (
-        <BlurView intensity={glass ? 40 : 30} tint={t.dark ? 'dark' : 'light'} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top }} />
+        <BlurView intensity={40} tint={t.dark ? 'systemUltraThinMaterialDark' : 'systemUltraThinMaterialLight'} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top }} />
       ) : null}
     </View>
   );
@@ -219,17 +199,9 @@ export default function Today() {
 const styles = StyleSheet.create({
   caps: { textTransform: 'uppercase', letterSpacing: 0.2 },
   titleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginBottom: 18 },
-  story: {
-    borderRadius: 26,
-    padding: 20,
-    paddingBottom: 18,
-    shadowOpacity: 0.08,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 4,
-  },
+  storyShadow: { borderRadius: 30, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 4 },
+  story: { padding: 20, paddingBottom: 18 },
   sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 28, marginBottom: 6, paddingHorizontal: 16, paddingRight: 22 },
-  list: { overflow: 'hidden' },
   shelfHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 },
   appRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   appBody: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, alignSelf: 'stretch' },

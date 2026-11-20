@@ -1,7 +1,5 @@
 import '@/setup';
 
-import { Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold, useFonts } from '@expo-google-fonts/geist';
-import { GeistMono_400Regular } from '@expo-google-fonts/geist-mono';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -17,7 +15,6 @@ void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, setLoaded] = useState(store.loaded);
-  const [fonts] = useFonts({ Geist_400Regular, Geist_500Medium, Geist_600SemiBold, Geist_700Bold, GeistMono_400Regular });
 
   useEffect(() => {
     if (!store.loaded) void store.load().then(() => setLoaded(true));
@@ -26,7 +23,7 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
-  const ready = loaded && fonts;
+  const ready = loaded;
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync();
   }, [ready]);

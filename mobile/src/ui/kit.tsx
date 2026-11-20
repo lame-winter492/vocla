@@ -1,5 +1,5 @@
 // Building blocks shared by every screen: Dynamic Type text, spring press feedback, iOS grouped lists,
-// capsule buttons and monogram icons. Everything reads the current design from useTheme().
+// glass capsule buttons and monogram icons. Everything reads the current look from useTheme().
 import { ChevronRight } from 'lucide-react-native';
 import { type ReactNode } from 'react';
 import {
@@ -19,6 +19,7 @@ import {
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { roundedFont, useTheme, type Palette } from '@/theme';
+import { Backdrop, Surface } from './material';
 
 // ---------- text: the iOS Dynamic Type scale ----------
 const SIZES = {
@@ -46,15 +47,13 @@ export function T({
   const t = useTheme();
   const s = SIZES[v];
   const c = color ? ((t.c as unknown as Record<string, string>)[color] ?? color) : t.c.fg;
-  // Focus runs a size smaller, like the web design
-  const scale = t.design === 'focus' && v !== 'largeTitle' && v !== 'title1' ? 0.94 : 1;
   return (
     <Text
       {...rest}
       style={[
-        { fontSize: Math.round(s.fontSize * scale), lineHeight: Math.round(s.lineHeight * scale), color: c },
+        { fontSize: s.fontSize, lineHeight: s.lineHeight, color: c },
         t.font(weight ?? s.w),
-        rounded && t.design === 'glass' ? roundedFont : null,
+        rounded ? roundedFont : null,
         style,
       ]}
     />
@@ -114,12 +113,18 @@ export function Button({
   testID?: string;
 }) {
   const t = useTheme();
-  const glass = t.design === 'glass';
-  const h = size === 'lg' ? 52 : size === 'sm' ? 32 : 44;
-  const bg =
-    kind === 'primary' ? t.c.accent : kind === 'tinted' ? t.c.pill : kind === 'plain' ? (glass ? t.c.pill : t.c.raised) : 'transparent';
-  const fg =
-    kind === 'primary' ? t.c.onAccent : kind === 'destructive' ? t.c.again : kind === 'plain' && !glass ? t.c.fg : t.c.accent;
+  const h = size === 'lg' ? 52 : size === 'sm' ? 34 : 44;
+  const fg = kind === 'primary' ? t.c.onAccent : kind === 'destructive' ? t.c.again : t.c.accent;
+  const label = (
+    <View style={{ minHeight: h, paddingHorizontal: size === 'sm' ? 14 : size === 'lg' ? 26 : 18, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}>
+      <T v={size === 'lg' ? 'headline' : size === 'sm' ? 'subhead' : 'body'} weight={600} color={fg}>
+        {title}
+      </T>
+      {icon}
+    </View>
+  );
+  // primary: accent-tinted glass (Liquid) or a solid accent capsule (Frosted); others: clear glass / frost
+  const solidPrimary = kind === 'primary' && t.look === 'frosted';
   return (
     <PressScale
       testID={testID}
@@ -127,53 +132,34 @@ export function Button({
       accessibilityLabel={title}
       disabled={disabled}
       onPress={onPress}
-      style={[
-        {
-          minHeight: h,
-          paddingHorizontal: size === 'sm' ? 14 : size === 'lg' ? 26 : 18,
-          borderRadius: glass ? h / 2 : t.radius.md,
-          backgroundColor: bg,
-          borderWidth: !glass && kind === 'plain' ? StyleSheet.hairlineWidth : 0,
-          borderColor: t.c.line,
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'row',
-          gap: 8,
-          opacity: disabled ? 0.4 : 1,
-        },
-        kind === 'primary' && glass ? { shadowColor: t.c.accent, shadowOpacity: 0.35, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } } : null,
-        style,
-      ]}
+      scaleTo={t.look === 'liquid' ? 1.04 : 0.96}
+      style={[{ opacity: disabled ? 0.4 : 1, borderRadius: h / 2 }, kind === 'primary' ? { shadowColor: t.c.accent, shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 5 } } : null, style]}
     >
-      <T v={size === 'lg' ? 'headline' : size === 'sm' ? 'subhead' : 'body'} weight={600} color={fg}>
-        {title}
-      </T>
-      {icon}
+      {kind === 'ghost' ? (
+        label
+      ) : solidPrimary ? (
+        <View style={{ borderRadius: h / 2, backgroundColor: t.c.accent }}>{label}</View>
+      ) : (
+        <Surface radius={h / 2} interactive tint={kind === 'primary' ? t.c.accent : undefined}>
+          {label}
+        </Surface>
+      )}
     </PressScale>
   );
 }
 
 // ---------- iOS inset grouped list ----------
 export function Group({ header, footer, children, style }: { header?: string; footer?: string; children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  const t = useTheme();
   return (
     <View style={[{ marginBottom: 26 }, style]}>
       {header ? (
-        <T v="footnote" color="muted" style={{ marginLeft: 16, marginBottom: 6, textTransform: t.design === 'glass' ? 'none' : 'none' }}>
+        <T v="footnote" weight={500} color="muted" style={{ marginLeft: 16, marginBottom: 6 }}>
           {header}
         </T>
       ) : null}
-      <View
-        style={{
-          backgroundColor: t.c.surface,
-          borderRadius: t.design === 'glass' ? 22 : t.radius.lg,
-          overflow: 'hidden',
-          borderWidth: t.design === 'focus' ? StyleSheet.hairlineWidth : 0,
-          borderColor: t.c.line,
-        }}
-      >
+      <Surface radius={26} strong>
         {children}
-      </View>
+      </Surface>
       {footer ? (
         <T v="footnote" color="muted" style={{ marginHorizontal: 16, marginTop: 6 }}>
           {footer}
@@ -243,7 +229,7 @@ export function Row({
         </View>
         {value ? <T color="muted">{value}</T> : null}
         {right}
-        {toggle !== undefined ? <Switch value={toggle} onValueChange={onToggle} trackColor={{ true: t.design === 'glass' ? t.c.good : t.c.accent }} thumbColor="#ffffff" /> : null}
+        {toggle !== undefined ? <Switch value={toggle} onValueChange={onToggle} trackColor={{ true: t.c.good }} thumbColor="#ffffff" /> : null}
         {chevron ? <ChevronRight size={18} color={t.c.faint} strokeWidth={2.2} /> : null}
       </View>
     </View>
@@ -278,16 +264,9 @@ function tile(h: number, l: number): string {
   return '#' + [f(0), f(8), f(4)].map((x) => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
 }
 export function Monogram({ name, text, size = 28 }: { name: string; text?: string; size?: number }) {
-  const t = useTheme();
   const h = hueOf(name);
   const yellowish = h > 35 && h < 75;
   const label = (text ?? name.trim().charAt(0)).toUpperCase() || '?';
-  if (t.design === 'focus')
-    return (
-      <View style={{ width: size, height: size, borderRadius: size * 0.24, backgroundColor: t.c.raised, borderWidth: StyleSheet.hairlineWidth, borderColor: t.c.line, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={[{ color: t.c.accent, fontSize: size * 0.42 }, t.mono]}>{label}</Text>
-      </View>
-    );
   return (
     <View
       style={{
@@ -307,17 +286,19 @@ export function Monogram({ name, text, size = 28 }: { name: string; text?: strin
 // ---------- screen scaffolding ----------
 /** A scrolling screen. contentInsetAdjustmentBehavior lets the native large title collapse on iOS. */
 export function Screen({ children, style, contentContainerStyle, ...rest }: ScrollViewProps & { children: ReactNode }) {
-  const t = useTheme();
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      keyboardShouldPersistTaps="handled"
-      style={[{ flex: 1, backgroundColor: t.c.bg }, style]}
-      contentContainerStyle={[{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 120 }, contentContainerStyle]}
-      {...rest}
-    >
-      {children}
-    </ScrollView>
+    <View style={{ flex: 1 }}>
+      <Backdrop />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        style={[{ flex: 1, backgroundColor: 'transparent' }, style]}
+        contentContainerStyle={[{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 130 }, contentContainerStyle]}
+        {...rest}
+      >
+        {children}
+      </ScrollView>
+    </View>
   );
 }
 

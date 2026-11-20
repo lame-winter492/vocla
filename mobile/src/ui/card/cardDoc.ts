@@ -25,7 +25,7 @@ export type CardMessage =
 const baseCss = (t: Theme) => `
 :root { color-scheme: ${t.dark ? 'dark' : 'light'}; --accent: ${t.c.accent}; --fg: ${t.c.fg}; --muted: ${t.c.muted}; --line: ${t.c.line}; --surface: ${t.c.surface}; --bg: ${t.c.bg}; }
 html, body { margin: 0; padding: 0; background: transparent; color: var(--fg); -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; }
-body { min-height: 100vh; display: flex; font-family: ${t.design === 'focus' ? '"Geist", ' : ''}-apple-system, system-ui, "SF Pro Text", Roboto, sans-serif; }
+body { min-height: 100vh; display: flex; font-family: -apple-system, system-ui, "SF Pro Text", Roboto, sans-serif; }
 #wrap { margin: auto; width: 100%; box-sizing: border-box; padding: 28px 22px; }
 .card { line-height: 1.35; background: transparent !important; color: inherit; }
 .cloze { font-weight: 600; color: var(--accent); }

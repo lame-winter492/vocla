@@ -12,6 +12,7 @@ import { CardType, Queue } from '@core/types';
 import { roundedFont, useTheme } from '@/theme';
 import { haptic } from '@/ui/feedback';
 import { Screen, T } from '@/ui/kit';
+import { Surface } from '@/ui/material';
 import { Ring } from '@/ui/widgets';
 
 const PERIODS = [
@@ -63,14 +64,14 @@ export default function Stats() {
   }
   const countColors: Record<keyof typeof counts, string> = { New: t.c.newC, Learning: t.c.learnC, Young: t.c.good, Mature: t.dark ? '#1f8a46' : '#248a3d', Suspended: t.c.faint };
 
-  const card = { backgroundColor: t.c.surface, borderRadius: t.design === 'glass' ? 22 : t.radius.lg, padding: 16, marginBottom: 16, borderWidth: t.design === 'glass' ? 0 : StyleSheet.hairlineWidth, borderColor: t.c.line };
-  const big = [{ fontSize: 34, lineHeight: 40 }, t.design === 'glass' ? { fontWeight: '700' as const, ...roundedFont } : t.font(600)];
+  const card = { padding: 16, marginBottom: 16 };
+  const big = [{ fontSize: 34, lineHeight: 40 }, { fontWeight: '700' as const, ...roundedFont }];
 
   return (
     <Screen>
       <Stack.Screen options={{ title: 'Statistics' }} />
       {/* today */}
-      <View style={[card, { flexDirection: 'row', gap: 12 }]}>
+      <Surface radius={26} strong style={[card, { flexDirection: 'row', gap: 12 }]}>
         {[
           [todayLogs.length, 'cards today', t.c.accent],
           [todayMin, 'minutes', t.c.fg],
@@ -83,7 +84,7 @@ export default function Stats() {
             </T>
           </View>
         ))}
-      </View>
+      </Surface>
       {todayLogs.length ? (
         <T v="footnote" color="muted" style={{ marginTop: -8, marginBottom: 16, marginHorizontal: 6 }}>
           {todayAgain} answered Again today ({Math.round((todayAgain / todayLogs.length) * 100)}%).
@@ -94,9 +95,9 @@ export default function Stats() {
       <Segmented options={PERIODS.map((p) => p.label)} index={PERIODS.findIndex((p) => p.days === period)} onChange={(i) => setPeriod(PERIODS[i].days)} />
 
       {/* retention */}
-      <View style={[card, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
+      <Surface radius={26} strong style={[card, { flexDirection: 'row', alignItems: 'center', gap: 18 }]}>
         <Ring key={period} value={retention ?? 0} size={92} stroke={11} color={t.c.good}>
-          <T v="headline" style={t.design === 'glass' ? roundedFont : undefined}>
+          <T v="headline" style={roundedFont}>
             {retention === null ? '–' : `${Math.round(retention * 100)}%`}
           </T>
         </Ring>
@@ -108,13 +109,13 @@ export default function Stats() {
               : `Of ${reviews.length} due reviews, ${Math.round(retention * 100)}% were remembered. The scheduler aims for ${Math.round(col.confFor(col.d.prefs.currentDeck).fsrs.desiredRetention * 100)}%.`}
           </T>
         </View>
-      </View>
+      </Surface>
 
       <Chart key={`r${period}`} title="Reviews" note={bucket > 1 ? 'per week' : 'per day'} values={perDay} color={t.c.accent} style={card} right="today" />
       <Chart key={`f${period}`} title="Coming up" note={bucket > 1 ? 'per week' : 'per day'} values={forecast} color={t.c.revC} style={card} left="today" right={`in ${period} days`} />
 
       {/* card maturity */}
-      <View style={card}>
+      <Surface radius={26} strong style={card}>
         <T v="headline" style={{ marginBottom: 12 }}>
           Cards
         </T>
@@ -134,7 +135,7 @@ export default function Stats() {
         <T v="caption" color="muted" style={{ marginTop: 10 }}>
           Young cards are due again within 3 weeks; mature cards after that.
         </T>
-      </View>
+      </Surface>
     </Screen>
   );
 }
@@ -155,7 +156,7 @@ function Segmented({ options, index, onChange }: { options: string[]; index: num
       accessibilityRole="tablist"
       style={{ flexDirection: 'row', padding: 2, borderRadius: 10, backgroundColor: t.c.pill, marginBottom: 16 }}
     >
-      {w ? <Animated.View style={[{ position: 'absolute', top: 2, bottom: 2, left: 2, width: segW, borderRadius: 8, backgroundColor: t.design === 'glass' ? (t.dark ? '#636366' : '#ffffff') : t.c.raised, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }, thumb]} /> : null}
+      {w ? <Animated.View style={[{ position: 'absolute', top: 2, bottom: 2, left: 2, width: segW, borderRadius: 8, backgroundColor: t.dark ? 'rgba(255,255,255,0.22)' : '#ffffff', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } }, thumb]} /> : null}
       {options.map((o, i) => (
         <Pressable
           key={o}
@@ -200,7 +201,8 @@ function Chart({ title, note, values, color, style, left, right }: { title: stri
     p.value = withDelay(120, withTiming(1, { duration: 900, easing: Easing.out(Easing.cubic) }));
   }, [p]);
   return (
-    <View style={style} accessibilityLabel={`${title}: ${total} total`}>
+    <Surface radius={26} strong style={style}>
+      <View accessible accessibilityLabel={`${title}: ${total} total`}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
         <T v="headline">{title}</T>
         <T v="footnote" color="muted">
@@ -220,6 +222,7 @@ function Chart({ title, note, values, color, style, left, right }: { title: stri
           {right ?? ''}
         </T>
       </View>
-    </View>
+      </View>
+    </Surface>
   );
 }

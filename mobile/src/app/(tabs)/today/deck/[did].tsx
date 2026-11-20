@@ -12,6 +12,7 @@ import { toast } from '@/ui/dialogs';
 import { haptic } from '@/ui/feedback';
 import { HeaderActions } from '@/ui/HeaderActions';
 import { Button, Group, PressScale, Row, Screen, T } from '@/ui/kit';
+import { Surface } from '@/ui/material';
 import { RollingNumber } from '@/ui/widgets';
 
 export default function DeckOverview() {
@@ -25,12 +26,11 @@ export default function DeckOverview() {
   const c = col.counts(did);
   const total = c.newCount + c.learnCount + c.reviewCount;
   const buried = Object.values(col.d.cards).some((x) => x.queue < -1 && col.deckAndChildren(did).some((d) => d.id === x.did));
-  const glass = t.design === 'glass';
   const actions = deckActions(did, name).filter((a) => a.title !== 'Study Now');
 
   const stat = (label: string, n: number, color: string) => (
     <View style={{ flex: 1, alignItems: 'center', gap: 2 }}>
-      <RollingNumber value={n} style={[{ fontSize: 34, lineHeight: 40, color }, glass ? { fontWeight: '700', ...roundedFont } : { ...t.font(600) }]} />
+      <RollingNumber value={n} style={{ fontSize: 34, lineHeight: 40, color, fontWeight: '700', ...roundedFont }} />
       <T v="footnote" color="muted">
         {label}
       </T>
@@ -64,11 +64,11 @@ export default function DeckOverview() {
           },
         ]}
       />
-      <View style={[styles.counts, { backgroundColor: t.c.surface, borderRadius: glass ? 22 : t.radius.lg, borderWidth: glass ? 0 : StyleSheet.hairlineWidth, borderColor: t.c.line }]}>
+      <Surface radius={26} strong style={styles.counts}>
         {stat('New', c.newCount, t.c.newC)}
         {stat('Learning', c.learnCount, t.c.learnC)}
         {stat('To review', c.reviewCount, t.c.revC)}
-      </View>
+      </Surface>
 
       {total > 0 ? (
         <Link href={`/study/${did}`} asChild>

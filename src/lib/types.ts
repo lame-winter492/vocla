@@ -184,6 +184,8 @@ export interface Prefs {
   reduceTransparency?: boolean;
   /** Browse: a list (Anki's table) or icons (a grid of card thumbnails, like Files / Safari's tab overview) */
   browserView?: "list" | "icons";
+  /** Native app look: Liquid Glass (iOS 26) or the frosted materials of earlier iOS. Unset = Liquid Glass. */
+  nativeLook?: "liquid" | "frosted";
 }
 
 export interface Collection {

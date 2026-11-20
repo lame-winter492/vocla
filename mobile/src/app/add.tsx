@@ -8,16 +8,15 @@ import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { store, useCol } from '@core/store';
 import { stripHtml } from '@core/template';
 import type { Note } from '@core/types';
-import { useTheme } from '@/theme';
 import { confirm, showActions, toast } from '@/ui/dialogs';
 import { haptic } from '@/ui/feedback';
 import { HeaderActions } from '@/ui/HeaderActions';
 import { Group, Row, T } from '@/ui/kit';
+import { Backdrop } from '@/ui/material';
 import { NoteFields } from '@/ui/NoteFields';
 
 export default function Add() {
   const col = useCol();
-  const t = useTheme();
   const params = useLocalSearchParams<{ did?: string }>();
   const prefs = col.d.prefs;
   const [ntid, setNtid] = useState(col.notetype(prefs.lastNoteType) ? prefs.lastNoteType : col.notetypes()[0].id);
@@ -62,7 +61,8 @@ export default function Add() {
   const decks = col.decks().filter((d) => !d.dyn).sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.c.bg }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <Backdrop />
       <Stack.Screen options={{ title: added ? `Add · ${added} added` : 'Add' }} />
       <HeaderActions placement="left" items={[{ label: added ? 'Done' : 'Cancel', sf: 'xmark', Icon: X, text: true, onPress: () => router.back() }]} />
       <HeaderActions items={[{ label: 'Add', sf: 'checkmark', Icon: Check, prominent: true, onPress: add, testID: 'add-note' }]} />

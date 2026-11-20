@@ -6,17 +6,16 @@ import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 
 import { store, useCol } from '@core/store';
 import type { Note } from '@core/types';
-import { useTheme } from '@/theme';
 import { confirm, toast } from '@/ui/dialogs';
 import { haptic } from '@/ui/feedback';
 import { HeaderActions } from '@/ui/HeaderActions';
 import { T } from '@/ui/kit';
+import { Backdrop } from '@/ui/material';
 import { NoteFields } from '@/ui/NoteFields';
 
 export default function EditNote() {
   const { nid } = useLocalSearchParams<{ nid: string }>();
   const col = useCol();
-  const t = useTheme();
   const original = col.d.notes[Number(nid)];
   const [note, setNote] = useState<Note | null>(() => (original ? structuredClone(original) : null));
   if (!note || !original) return <T style={{ padding: 20 }}>This note no longer exists.</T>;
@@ -29,7 +28,8 @@ export default function EditNote() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.c.bg }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <Backdrop />
       <Stack.Screen options={{ title: 'Edit Note' }} />
       <HeaderActions placement="left" items={[{ label: 'Cancel', sf: 'xmark', Icon: X, text: true, onPress: () => router.back() }]} />
       <HeaderActions

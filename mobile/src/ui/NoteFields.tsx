@@ -25,9 +25,10 @@ export function NoteFields({ note, nt, onChange, dupe, autoFocus }: { note: Note
   };
 
   const box = {
-    backgroundColor: t.c.surface,
-    borderRadius: t.design === 'glass' ? 14 : t.radius.md,
-    borderWidth: t.design === 'glass' ? 0 : StyleSheet.hairlineWidth,
+    // a translucent well on top of the backdrop, in either material
+    backgroundColor: t.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.72)',
+    borderRadius: 18,
+    borderWidth: StyleSheet.hairlineWidth,
     color: t.c.fg,
     fontSize: 17,
     paddingHorizontal: 14,
@@ -63,7 +64,7 @@ export function NoteFields({ note, nt, onChange, dupe, autoFocus }: { note: Note
             autoCapitalize="none"
             accessibilityLabel={f.name}
             testID={`field-${i}`}
-            style={[box, { minHeight: 48, borderColor: focused === i ? t.c.accent : t.c.line, outlineWidth: 0 }, focused === i && t.design === 'glass' ? { borderWidth: 2, borderColor: t.c.accent } : null]}
+            style={[box, { minHeight: 48, borderColor: focused === i ? t.c.accent : t.c.line, outlineWidth: 0 }, focused === i ? { borderWidth: 2, borderColor: t.c.accent } : null]}
           />
           {i === 0 && dupe ? (
             <T v="footnote" color="again" style={{ marginHorizontal: 6 }}>

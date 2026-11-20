@@ -17,7 +17,7 @@ export const CardView = forwardRef<CardViewHandle, { content: CardContent; onMes
     const ready = useRef(false);
     // the document is built once per theme; content changes are injected
     const first = useRef(content);
-    const doc = useMemo(() => cardDocument(t, first.current), [t.design, t.dark]); // eslint-disable-line react-hooks/exhaustive-deps
+    const doc = useMemo(() => cardDocument(t, first.current), [t.look, t.dark]); // eslint-disable-line react-hooks/exhaustive-deps
     const shown = useRef(content);
 
     useEffect(() => {

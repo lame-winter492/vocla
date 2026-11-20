@@ -30,12 +30,15 @@ make a development build instead: `npx expo run:ios` (needs Xcode on a Mac) or
 - **Reviewer**: cards render in a WebView, so Anki templates, CSS and `{{type:}}` / `{{tts}}` work. Tap
   to reveal, swipe right for Good and left for Again (Reanimated + Gesture Handler, on the UI thread),
   with haptics (expo-haptics) and speech (expo-speech).
-- **Liquid Glass controls**: `expo-glass-effect` on iOS 26; a raised disc elsewhere.
 - **Files**: the collection is a JSON file in the app's documents folder; import goes through the Files
   picker and export through the share sheet.
 
-Both designs from the web app are here (Settings → Appearance): **Liquid Glass**, which follows light
-and dark mode, and **Focus**, the dark amber design.
+Two looks (Settings → Appearance), both following light and dark mode:
+
+- **Liquid Glass**: the iOS 26 material everywhere. Cards, lists, buttons and sheets are real
+  `GlassView`s that refract the soft coloured light behind them and light up under your finger; the tab
+  bar is the system's floating glass bar with its lens. (Older iOS, Android and web get a clear blur.)
+- **Frosted**: the thicker blurred materials of earlier iOS, with a floating frosted tab bar.
 
 ## Layout
 

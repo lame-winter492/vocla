@@ -11,6 +11,7 @@ import { showActions, toast } from '@/ui/dialogs';
 import { haptic } from '@/ui/feedback';
 import { HeaderActions } from '@/ui/HeaderActions';
 import { Group, Row, T } from '@/ui/kit';
+import { Backdrop } from '@/ui/material';
 
 const parseSteps = (s: string) =>
   s
@@ -96,7 +97,8 @@ export default function DeckOptions() {
   );
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: t.c.bg }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <Backdrop />
       <Stack.Screen options={{ title: deck.name.split('::').pop() }} />
       <HeaderActions placement="left" items={[{ label: 'Cancel', sf: 'xmark', Icon: X, text: true, onPress: () => router.back() }]} />
       <HeaderActions items={[{ label: 'Save', sf: 'checkmark', Icon: Check, prominent: true, onPress: save, testID: 'save-options' }]} />

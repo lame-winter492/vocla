@@ -84,7 +84,7 @@ export function DeckRow({ node, first }: { node: DeckTreeNode; first: boolean })
       </Pressable>
       <Monogram name={node.name} size={node.depth ? 24 : 30} />
       <View style={[styles.body, { borderTopWidth: first ? 0 : StyleSheet.hairlineWidth, borderTopColor: t.c.line }]}>
-        <T style={{ flex: 1, fontStyle: d.dyn ? 'italic' : 'normal' }} numberOfLines={1} weight={t.design === 'focus' ? 500 : 400}>
+        <T style={{ flex: 1, fontStyle: d.dyn ? 'italic' : 'normal' }} numberOfLines={1}>
           {node.name}
         </T>
         <T v="subhead" color={due ? 'revC' : 'faint'} style={[styles.num, t.mono]}>
@@ -107,7 +107,7 @@ export function DeckRow({ node, first }: { node: DeckTreeNode; first: boolean })
     return (
       <Link href={href} onPress={() => store.mutate((c) => (c.d.prefs.currentDeck = d.id))}>
         <Link.Trigger>
-          <Pressable accessibilityRole="button" accessibilityLabel={`${node.name}, ${due} due, ${fresh} new`} style={({ pressed }) => ({ backgroundColor: pressed ? t.c.pill : t.c.surface })}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`${node.name}, ${due} due, ${fresh} new`} style={({ pressed }) => ({ backgroundColor: pressed ? t.c.pill : 'transparent' })}>
             {row}
           </Pressable>
         </Link.Trigger>
@@ -129,7 +129,7 @@ export function DeckRow({ node, first }: { node: DeckTreeNode; first: boolean })
         haptic.firm();
         showActions(node.name, actions);
       }}
-      style={({ pressed }) => ({ backgroundColor: pressed ? t.c.pill : t.c.surface })}
+      style={({ pressed }) => ({ backgroundColor: pressed ? t.c.pill : 'transparent' })}
     >
       {row}
     </Pressable>

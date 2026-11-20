@@ -19,8 +19,8 @@ export function TabStack() {
         headerStyle: ios ? undefined : { backgroundColor: t.c.bg },
         headerTitleStyle: { color: t.c.fg, ...headerFont(t, 600) },
         // the large title style types fontWeight as a plain string
-        headerLargeTitleStyle: { color: t.c.fg, fontFamily: headerFont(t, 700).fontFamily, fontWeight: headerFont(t, 700).fontWeight as string | undefined },
-        contentStyle: { backgroundColor: t.c.bg },
+        headerLargeTitleStyle: { color: t.c.fg, fontWeight: headerFont(t, 700).fontWeight as string | undefined },
+        contentStyle: { backgroundColor: 'transparent' },
         headerBackButtonDisplayMode: 'minimal',
       }}
     />

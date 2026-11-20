@@ -11,6 +11,7 @@ import { haptic } from '@/ui/feedback';
 import { HeaderActions } from '@/ui/HeaderActions';
 import { pickTextFile, shareFile } from '@/ui/io';
 import { Button, Monogram, PressScale, Screen, T } from '@/ui/kit';
+import { Surface } from '@/ui/material';
 
 export async function importCourseFile() {
   const f = await pickTextFile();
@@ -46,14 +47,14 @@ export default function Courses() {
           [`${p.xp}`, 'XP'],
           [`${streak(p.days, col.today())}`, 'day streak'],
         ].map(([n, l]) => (
-          <View key={l} style={[styles.chip, { backgroundColor: t.c.surface, borderColor: t.c.line, borderWidth: t.design === 'glass' ? 0 : StyleSheet.hairlineWidth }]}>
+          <Surface key={l} radius={18} style={styles.chip}>
             <T v="headline" color="accent" style={t.mono}>
               {n}
             </T>
             <T v="subhead" color="muted">
               {l}
             </T>
-          </View>
+          </Surface>
         ))}
       </View>
       {courses.length === 0 ? <T color="muted">No courses yet. Import one with the + button.</T> : null}

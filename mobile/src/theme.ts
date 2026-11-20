@@ -1,16 +1,18 @@
-// Two designs, as in the web app:
-// - "glass": a stock iOS app (system colours, SF Pro, grouped lists, Liquid Glass chrome). Follows light/dark.
-// - "focus": Vocla's own dark design (warm amber on near-black, Geist).
+// Two looks, both in iOS's own visual language and both following light/dark mode:
+// - "liquid": Liquid Glass (iOS 26). Controls and cards are clear glass that bends and lights up the
+//   content behind it; the tab bar is the system's floating glass bar with its lens.
+// - "frosted": the frosted materials of iOS 18 and earlier: soft blur, no refraction.
 import { Platform, useColorScheme, type TextStyle } from 'react-native';
 
 import { useCol } from '@core/store';
 
-export type Design = 'glass' | 'focus';
+export type Look = 'liquid' | 'frosted';
 
 export interface Palette {
-  bg: string; // screen background (grouped background in glass)
-  surface: string; // cards and list rows
-  raised: string; // controls on a surface
+  bg: string; // behind everything (the ambient backdrop is drawn on top of it)
+  surface: string; // solid fill where a material isn't possible
+  raised: string;
+  fill: string; // text fields and quiet controls on top of a material
   fg: string;
   fg2: string;
   muted: string;
@@ -18,7 +20,7 @@ export interface Palette {
   line: string;
   accent: string;
   onAccent: string;
-  pill: string; // grey capsule (App Store "Get")
+  pill: string;
   again: string;
   hard: string;
   good: string;
@@ -27,17 +29,20 @@ export interface Palette {
   learnC: string;
   revC: string;
   overlay: string;
+  /** colours of the soft light behind the glass */
+  glow: [string, string, string];
 }
 
-const GLASS_LIGHT: Palette = {
-  bg: '#f2f2f7',
+const LIGHT: Palette = {
+  bg: '#eef0f6',
   surface: '#ffffff',
   raised: '#ffffff',
+  fill: 'rgba(118,118,128,0.12)',
   fg: '#000000',
   fg2: 'rgba(60,60,67,0.85)',
-  muted: 'rgba(60,60,67,0.6)',
-  faint: 'rgba(60,60,67,0.3)',
-  line: 'rgba(60,60,67,0.18)',
+  muted: 'rgba(60,60,67,0.62)',
+  faint: 'rgba(60,60,67,0.32)',
+  line: 'rgba(60,60,67,0.16)',
   accent: '#007aff',
   onAccent: '#ffffff',
   pill: 'rgba(120,120,128,0.16)',
@@ -47,104 +52,69 @@ const GLASS_LIGHT: Palette = {
   easy: '#007aff',
   newC: '#007aff',
   learnC: '#ff3b30',
-  revC: '#34c759',
-  overlay: 'rgba(0,0,0,0.25)',
+  revC: '#28a745',
+  overlay: 'rgba(0,0,0,0.22)',
+  glow: ['#7ab8ff', '#c9a6ff', '#8ee6d8'],
 };
 
-const GLASS_DARK: Palette = {
+const DARK: Palette = {
   bg: '#000000',
   surface: '#1c1c1e',
   raised: '#2c2c2e',
+  fill: 'rgba(118,118,128,0.24)',
   fg: '#ffffff',
   fg2: 'rgba(235,235,245,0.85)',
   muted: 'rgba(235,235,245,0.6)',
   faint: 'rgba(235,235,245,0.3)',
-  line: 'rgba(84,84,88,0.6)',
+  line: 'rgba(84,84,88,0.55)',
   accent: '#0a84ff',
   onAccent: '#ffffff',
-  pill: 'rgba(120,120,128,0.24)',
+  pill: 'rgba(120,120,128,0.26)',
   again: '#ff453a',
   hard: '#ff9f0a',
   good: '#30d158',
   easy: '#0a84ff',
-  newC: '#0a84ff',
-  learnC: '#ff453a',
+  newC: '#409cff',
+  learnC: '#ff6961',
   revC: '#30d158',
   overlay: 'rgba(0,0,0,0.5)',
-};
-
-// the web app's Focus tokens (src/style.css)
-const FOCUS: Palette = {
-  bg: '#0f1115',
-  surface: '#15181d',
-  raised: '#1b1f25',
-  fg: '#ece9e4',
-  fg2: '#c9c5bf',
-  muted: '#8f949c',
-  faint: '#4a505a',
-  line: '#23272f',
-  accent: '#f2b84b',
-  onAccent: '#1a1406',
-  pill: '#1f232b',
-  again: '#ee6d64',
-  hard: '#dfa23c',
-  good: '#5cbf7c',
-  easy: '#5aa6e2',
-  newC: '#8fb0f5',
-  learnC: '#ee8a82',
-  revC: '#74cf92',
-  overlay: 'rgba(0,0,0,0.6)',
+  glow: ['#0a3d91', '#4b1f7a', '#0b5c57'],
 };
 
 export interface Theme {
-  design: Design;
+  look: Look;
   dark: boolean;
   c: Palette;
-  /** text style for a weight: SF Pro in glass, Geist in focus */
+  /** SF Pro at a weight */
   font: (weight?: 400 | 500 | 600 | 700) => TextStyle;
   mono: TextStyle;
-  radius: { sm: number; md: number; lg: number; card: number };
 }
 
-const GEIST: Record<number, string> = { 400: 'Geist_400Regular', 500: 'Geist_500Medium', 600: 'Geist_600SemiBold', 700: 'Geist_700Bold' };
-const ROUNDED = Platform.select({ ios: 'ui-rounded', default: undefined });
-
-export function currentDesign(pref?: Design): Design {
-  return pref ?? 'glass';
+export function currentLook(pref?: Look): Look {
+  return pref ?? 'liquid';
 }
 
-export function makeTheme(design: Design, dark: boolean): Theme {
-  if (design === 'focus')
-    return {
-      design,
-      dark: true,
-      c: FOCUS,
-      font: (w = 400) => ({ fontFamily: GEIST[w] }),
-      mono: { fontFamily: 'GeistMono_400Regular' },
-      radius: { sm: 8, md: 10, lg: 12, card: 14 },
-    };
+export function makeTheme(look: Look, dark: boolean): Theme {
   return {
-    design,
+    look,
     dark,
-    c: dark ? GLASS_DARK : GLASS_LIGHT,
+    c: dark ? DARK : LIGHT,
     font: (w = 400) => ({ fontWeight: String(w) as TextStyle['fontWeight'] }),
     mono: { fontVariant: ['tabular-nums'] },
-    radius: { sm: 10, md: 14, lg: 22, card: 26 },
   };
 }
 
-/** The current theme; re-renders when the design preference or the system appearance changes. */
+/** The current theme; re-renders when the look preference or the system appearance changes. */
 export function useTheme(): Theme {
   const col = useCol();
   const scheme = useColorScheme();
-  return makeTheme(currentDesign(col.d.prefs.design), scheme === 'dark');
+  return makeTheme(currentLook(col.d.prefs.nativeLook), scheme === 'dark');
 }
 
-/** Font family/weight for navigation-bar titles (they accept nothing else). */
-export function headerFont(t: Theme, w: 600 | 700): Pick<TextStyle, 'fontFamily' | 'fontWeight'> {
-  const f = t.font(w);
-  return f.fontFamily ? { fontFamily: f.fontFamily } : { fontWeight: f.fontWeight };
+/** Font weight for navigation-bar titles (they accept nothing else). */
+export function headerFont(t: Theme, w: 600 | 700): Pick<TextStyle, 'fontWeight'> {
+  return { fontWeight: t.font(w).fontWeight };
 }
 
-/** Rounded system font for big numbers (SF Pro Rounded on iOS). */
-export const roundedFont: TextStyle = ROUNDED ? { fontFamily: ROUNDED } : {};
+/** SF Pro Rounded, for big numbers (iOS; other platforms use their system font). */
+export const roundedFont: TextStyle = Platform.select({ ios: { fontFamily: 'ui-rounded' }, web: { fontFamily: 'ui-rounded, system-ui' }, default: {} });

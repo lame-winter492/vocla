@@ -16,6 +16,7 @@ import { confirm, showActions, toast } from '@/ui/dialogs';
 import { haptic } from '@/ui/feedback';
 import { HeaderActions, type MenuItem } from '@/ui/HeaderActions';
 import { T } from '@/ui/kit';
+import { Backdrop, Surface } from '@/ui/material';
 import { useNow } from '@/ui/useNow';
 
 type SortKey = 'sort' | 'created' | 'due' | 'ivl' | 'reps' | 'lapses';
@@ -156,7 +157,8 @@ export default function Browse() {
   const tileW = (width - 32 - (cols - 1) * 12) / cols;
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.c.bg }}>
+    <View style={{ flex: 1 }}>
+      <Backdrop />
       <Stack.Screen
         options={{
           title: 'Browse',
@@ -219,24 +221,12 @@ export default function Browse() {
                 <Pressable onPress={() => router.push(`/note/${r.c.nid}`)} onLongPress={() => (haptic.firm(), actions(item))} accessibilityRole="button" accessibilityLabel={r.front}>
                   {({ pressed }) => (
                     <>
-                      <View
-                        style={[
-                          styles.thumb,
-                          {
-                            backgroundColor: t.c.surface,
-                            borderRadius: t.design === 'glass' ? 16 : 12,
-                            borderWidth: t.design === 'glass' ? 0 : StyleSheet.hairlineWidth,
-                            borderColor: t.c.line,
-                            opacity: susp ? 0.45 : 1,
-                            transform: [{ scale: pressed ? 0.96 : 1 }],
-                          },
-                        ]}
-                      >
+                      <Surface radius={20} strong style={[styles.thumb, { opacity: susp ? 0.45 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] }]}>
                         <T v="headline" numberOfLines={3} style={{ textAlign: 'center' }}>
                           {r.front || '—'}
                         </T>
                         {r.c.flags ? <View style={[styles.dot, { backgroundColor: FLAG[r.c.flags], position: 'absolute', top: 8, right: 8 }]} /> : null}
-                      </View>
+                      </Surface>
                       <T v="footnote" weight={500} numberOfLines={1} style={{ textAlign: 'center', marginTop: 6 }}>
                         {mode === 'cards' ? r.template : r.back}
                       </T>
@@ -258,7 +248,7 @@ export default function Browse() {
               style={({ pressed }) => [
                 styles.row,
                 {
-                  backgroundColor: pressed ? t.c.pill : t.c.surface,
+                  backgroundColor: pressed ? t.c.pill : t.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.72)',
                   borderTopLeftRadius: index === 0 ? 18 : 0,
                   borderTopRightRadius: index === 0 ? 18 : 0,
                   borderBottomLeftRadius: index === Math.min(ids.length, 1500) - 1 ? 18 : 0,
