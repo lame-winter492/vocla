@@ -10,11 +10,15 @@ import { Modal } from "./Modal";
 import { useNav } from "./nav";
 import { NoteEditor } from "./NoteEditor";
 import { haptic } from "./haptics";
+import { transition } from "./motion";
+import { RollingNumber } from "./RollingNumber";
 
 export function Study({ did }: { did: ID }) {
   const col = useCol();
   const { go, toast } = useNav();
-  const [current, setCurrent] = useState<QueuedCard | null>(null);
+  // pick the first card before the first render: no flash of the "done" screen, and the zoom
+  // transition from "Start session" has the reviewer to grow into
+  const [current, setCurrent] = useState<QueuedCard | null>(() => store.col.getNextCard(did));
   const [showAnswer, setShowAnswer] = useState(false);
   const [typed, setTyped] = useState<string | undefined>(undefined);
   const [started, setStarted] = useState(Date.now());
@@ -23,8 +27,12 @@ export function Study({ did }: { did: ID }) {
   const [, tick] = useState(0);
   const lastCid = useRef<ID | undefined>(undefined);
   const viewRef = useRef<HTMLDivElement>(null);
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(() => current === null);
   const [answered, setAnswered] = useState(0); // cards answered this session (for the progress line)
+  // finishing a session is a completed task: success haptic (HIG notification feedback)
+  useEffect(() => {
+    if (done && answered > 0) haptic("success");
+  }, [done]); // eslint-disable-line react-hooks/exhaustive-deps
   const [tools, setTools] = useState(false);
   const leave = () => go(did === ALL_DECKS ? { name: "decks" } : { name: "overview", did });
 
@@ -56,9 +64,12 @@ export function Study({ did }: { did: ID }) {
 
   const reveal = () => {
     if (!card || showAnswer) return;
-    haptic("tap");
-    setTyped(readTyped(viewRef.current));
-    setShowAnswer(true);
+    const t = readTyped(viewRef.current);
+    // the card morphs to its new height as the answer appears
+    transition("card", () => {
+      setTyped(t);
+      setShowAnswer(true);
+    });
   };
 
   // ---- touch: tap the card to reveal, then swipe right = Good, left = Again ----
@@ -97,9 +108,12 @@ export function Study({ did }: { did: ID }) {
     const d = drag.current;
     drag.current = null;
     if (!d?.active) return;
+    const root = viewRef.current?.closest<HTMLElement>(".reviewer");
+    if (root) root.dataset.swipe = "";
+    // answering: leave the card where the finger let go, so it flies on from there
     if (d.dx >= SWIPE) answer(3);
     else if (d.dx <= -SWIPE) answer(1);
-    setSwipeVisual(0, true);
+    else setSwipeVisual(0, true);
   };
   const onCardClick = (e: React.MouseEvent) => {
     if (showAnswer) return;
@@ -111,7 +125,7 @@ export function Study({ did }: { did: ID }) {
 
   const answer = (ease: Ease) => {
     if (!card || !showAnswer) return;
-    haptic(ease === 1 ? "error" : "tap");
+    haptic("tap"); // one consistent impact for every answer (HIG: haptics by meaning, used with restraint)
     const { leech } = store.update("Review", (c) => c.answer(card.id, ease, Date.now() - started));
     if (leech)
       toast(
@@ -120,8 +134,14 @@ export function Study({ did }: { did: ID }) {
           : "This card keeps slipping (tagged leech). An example sentence or a memory hook usually helps.",
       );
     lastCid.current = card.id;
-    setAnswered((n) => n + 1);
-    next();
+    // the answered card leaves in the direction of the answer (Again: left, otherwise right), starting from
+    // wherever it is (a swipe leaves it mid-flight); the next card gets its own entrance
+    const leaving = cardEl();
+    if (leaving) leaving.style.viewTransitionName = "card-old";
+    transition(ease === 1 ? "card-again" : "card-good", () => {
+      setAnswered((n) => n + 1);
+      next();
+    });
   };
 
   const undo = () => {
@@ -252,7 +272,7 @@ export function Study({ did }: { did: ID }) {
   );
 
   return (
-    <div className="reviewer">
+    <div className="reviewer hero-cta">
       <header className="review-head">
         <button className="ghost icon" aria-label="End session (Esc)" onClick={leave}>
           ✕
@@ -261,7 +281,7 @@ export function Study({ did }: { did: ID }) {
           <div style={{ width: `${sessionTotal ? (answered / sessionTotal) * 100 : 0}%` }} />
         </div>
         <span className="review-count">
-          {answered}/{sessionTotal}
+          <RollingNumber value={answered} />/<RollingNumber value={sessionTotal} />
         </span>
         <button className="ghost icon" aria-label="Card actions" aria-expanded={tools} onClick={() => setTools(!tools)}>
           ⋯

@@ -7,9 +7,12 @@ import "@fontsource/geist/600.css";
 import "@fontsource/geist/700.css";
 import "@fontsource/geist-mono/400.css";
 import "@fontsource/geist-mono/500.css";
+import "./springs.css";
 import "./style.css";
 import "./glass.css";
+import "./motion.css";
 import { initNative, onAppBackground } from "./lib/native";
+import { installInteractiveGlass } from "./ui/motion";
 
 // TTS helper available to card templates ({{tts en_US:Field}})
 (window as any).voclaSpeak = (text: string, lang: string) => {
@@ -22,6 +25,8 @@ import { initNative, onAppBackground } from "./lib/native";
 
 // lets the iOS preview page switch designs from outside the React tree
 (window as any).voclaSetDesign = (d: "focus" | "glass") => store.mutate((c) => (c.d.prefs.design = d));
+
+installInteractiveGlass();
 
 store.load().then(() => {
   createRoot(document.getElementById("root")!).render(<App />);

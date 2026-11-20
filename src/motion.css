@@ -1,0 +1,313 @@
+/* ==========================================================================
+   Motion: where and how Vocla animates, following Apple's guidance.
+   - Purposeful and brief; never makes people wait (everything is interruptible).
+   - Springs, not durations: Apple's (duration, bounce) springs from src/springs.css.
+   - Frequent actions (answering cards) get quick, quiet feedback; rare moments (finishing a lesson) can celebrate.
+   - Liquid Glass: controls are quiet at rest and "come to life on touch": the glass flexes and lights up
+     from under the fingertip; menus and sheets materialize from where you tapped.
+   - Reduce Motion swaps movement for short crossfades and removes all bounce. Reduce Transparency and
+     Increase Contrast make the glass solid / outlined.
+   ========================================================================== */
+
+/* ---------- 1. press feedback (both designs) ---------- */
+button, .rail-item, .option, .tile {
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.2s, filter 0.15s, opacity 0.2s,
+    transform var(--dur-bouncy) var(--ease-bouncy), scale var(--dur-bouncy) var(--ease-bouncy);
+}
+:is(button, .option, .tile):is(:active, .pressed):not(:disabled) { transform: scale(0.96); transition-duration: 0.08s; transition-timing-function: ease-out; }
+.answer-buttons button:is(:active, .pressed):not(:disabled) { transform: scale(0.93); background: color-mix(in srgb, var(--c) 18%, var(--surface)); }
+.rail-item:is(:active, .pressed):not(:disabled) { transform: scale(0.92); transition-duration: 0.08s; }
+
+/* ---------- 2. interactive Liquid Glass ---------- */
+html[data-design="glass"] { --glow: rgba(255, 255, 255, 0.9); }
+@media (prefers-color-scheme: dark) { html[data-design="glass"]:not([data-theme="light"]) { --glow: rgba(255, 255, 255, 0.24); } }
+html[data-design="glass"][data-theme="dark"] { --glow: rgba(255, 255, 255, 0.24); }
+
+html[data-design="glass"] button { position: relative; overflow: hidden; isolation: isolate; }
+/* light that starts under the fingertip and spreads through the control */
+html[data-design="glass"] button::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(circle at var(--px, 50%) var(--py, 50%), var(--glow) 0, transparent 70%);
+  opacity: 0; scale: 0.3; transform-origin: var(--px, 50%) var(--py, 50%);
+  transition: opacity 0.5s ease-out, scale 0.55s var(--ease-smooth);
+}
+html[data-design="glass"] button.primary::after { --glow: rgba(255, 255, 255, 0.4); }
+html[data-design="glass"] button.pressed:not(:disabled)::after { opacity: 1; scale: 1.6; transition-duration: 0.06s, 0.4s; }
+/* floating glass controls flex outward like gel when pressed (content buttons compress instead) */
+html[data-design="glass"] :is(.topbar button, .review-head button.icon, .answer-buttons button, .backbtn):is(:active, .pressed):not(:disabled) {
+  transform: scale(1.08); transition-duration: 0.12s;
+}
+@media (hover: hover) {
+  /* pointer: a soft specular highlight follows the cursor over glass controls */
+  html[data-design="glass"] :is(.topbar button, .review-head button.icon, .answer-buttons button, .backbtn):hover:not(:disabled)::after { opacity: 0.5; scale: 1; }
+}
+/* larger glass is "thicker": deeper shadow */
+html[data-design="glass"] :is(.menu, .modal) { box-shadow: var(--glass-rim), 0 22px 60px rgba(0, 0, 0, 0.22), 0 2px 6px rgba(0, 0, 0, 0.08); }
+
+/* ---------- 3. tab bar: one selection droplet that slides between tabs ---------- */
+.rail-item { position: relative; z-index: 1; }
+.rail.has-droplet .rail-item.on { background: transparent !important; }
+.rail-droplet {
+  position: absolute; left: 0; top: 0; width: 0; height: 0; z-index: 0; pointer-events: none; opacity: 0;
+  border-radius: 10px; background: var(--hover);
+  transition: transform var(--dur-snappy) var(--ease-snappy), width var(--dur-snappy) var(--ease-snappy),
+    height var(--dur-snappy) var(--ease-snappy), opacity 0.2s, scale var(--dur-bouncy) var(--ease-bouncy);
+}
+.rail-droplet.gel { animation: gel var(--dur-snappy) ease-out; } /* stretches as it travels, like a droplet */
+@keyframes gel { 0% { scale: 1 1; } 35% { scale: 1.14 0.9; } 100% { scale: 1 1; } }
+.rail:has(.rail-item.pressed) .rail-droplet { scale: 1.08; }
+html[data-design="glass"] .rail-droplet {
+  border-radius: 20px; background: var(--pill);
+  box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.35), inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+}
+/* the selected tab's symbol bounces once (SF Symbols "bounce" effect) */
+.rail-item.on svg { animation: symbol-bounce var(--dur-bouncy) var(--ease-bouncy); }
+@keyframes symbol-bounce { 0% { scale: 1; } 30% { scale: 0.8; } 100% { scale: 1; } }
+@media (max-width: 760px) {
+  html[data-design="focus"] .rail-droplet { display: none; }
+  html[data-design="glass"] .rail-droplet { border-radius: 27px; }
+  html[data-design="glass"].tabs-min .rail-droplet { opacity: 0 !important; }
+}
+
+/* ---------- 4. navigation bar: back button, inline title, scroll edge effect ---------- */
+.topbar { position: sticky; top: 0; z-index: 25; isolation: isolate; }
+.topbar:has(.backbtn) .logo { display: none !important; }
+.backbtn { margin-right: auto; display: inline-flex; align-items: center; gap: 2px; padding: 0 12px 0 6px; }
+.backbtn svg { width: 22px; height: 22px; }
+.topbar-title {
+  position: absolute; left: 50%; bottom: 6px; height: 40px; line-height: 40px; max-width: 46%;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; font-size: 16px; pointer-events: none;
+  opacity: 0; transform: translate(-50%, 8px); transition: opacity 0.2s, transform var(--dur-snappy) var(--ease-snappy);
+}
+html.title-collapsed .topbar-title { opacity: 1; transform: translate(-50%, 0); }
+html.title-collapsed .large-title { opacity: 0; }
+.large-title { transition: opacity 0.2s; }
+/* content dissolves under the bar once it scrolls beneath it (iOS 26 soft scroll edge) */
+.topbar::before {
+  content: ""; position: absolute; inset: 0 0 -20px 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 0.25s;
+  background: linear-gradient(var(--bg) 60%, transparent);
+}
+html.scrolled .topbar::before { opacity: 1; }
+html[data-design="glass"] .topbar::before {
+  background: color-mix(in srgb, var(--bg) 50%, transparent);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  -webkit-mask-image: linear-gradient(#000 55%, transparent); mask-image: linear-gradient(#000 55%, transparent);
+}
+html[data-design="glass"] .backbtn { width: 44px; padding: 0; justify-content: center; }
+html[data-design="glass"] .backbtn .back-label { display: none; } /* iOS 26: a glass circle with a chevron */
+@media (max-width: 760px) {
+  /* bottom scroll edge: content softens as it passes under the floating tab bar */
+  html[data-design="glass"] .shell::after {
+    content: ""; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; pointer-events: none;
+    height: calc(100px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(transparent, color-mix(in srgb, var(--bg) 70%, transparent));
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    -webkit-mask-image: linear-gradient(transparent, #000 65%); mask-image: linear-gradient(transparent, #000 65%);
+  }
+}
+
+/* ---------- 5. menus materialize from the button that opened them ---------- */
+.menu { animation: materialize var(--dur-snappy) var(--ease-snappy) both; transform-origin: top right; }
+.rail-more .menu { transform-origin: bottom left; }
+@media (max-width: 760px) { .rail-more .menu { transform-origin: bottom right; } }
+@keyframes materialize { from { opacity: 0; scale: 0.55; filter: blur(8px); } to { opacity: 1; scale: 1; filter: none; } }
+
+/* long-press context menu: the row lifts above a blurred, dimmed background */
+.context-scrim { position: fixed; inset: 0; z-index: 44; background: rgba(0, 0, 0, 0.3); animation: fade-in 0.2s ease-out both; }
+html[data-design="glass"] .context-scrim {
+  background: color-mix(in srgb, var(--bg) 30%, rgba(0, 0, 0, 0.12));
+  -webkit-backdrop-filter: blur(16px) saturate(140%); backdrop-filter: blur(16px) saturate(140%);
+}
+.decklist tr.lifted { position: relative; z-index: 46; animation: lift var(--dur-bouncy) var(--ease-bouncy) both; }
+.decklist tr.lifted td { background: var(--surface); }
+.decklist tr.lifted td:not(:last-child) { box-shadow: 1px 0 0 var(--surface); } /* no hairline seams between cells while scaled */
+.decklist tr.lifted td:first-child { border-radius: 14px 0 0 14px; }
+.decklist tr.lifted td:last-child { border-radius: 0 14px 14px 0; }
+@keyframes lift { from { scale: 1; filter: none; } to { scale: 1.025; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.18)); } }
+
+/* ---------- 6. sheets and dialogs ---------- */
+.modal-bg { animation: fade-in 0.22s ease-out both; }
+.modal { animation: dialog-in var(--dur-snappy) var(--ease-snappy) both; }
+.modal-bg.closing { animation: fade-out 0.22s ease-in both; }
+.modal.closing { animation: dialog-out 0.2s ease-in both; }
+@keyframes dialog-in { from { opacity: 0; scale: 0.9; filter: blur(6px); } to { opacity: 1; scale: 1; filter: none; } }
+@keyframes dialog-out { to { opacity: 0; scale: 0.94; } }
+@media (max-width: 760px) {
+  .modal { animation: sheet-up var(--dur-snappy) var(--ease-snappy) both; touch-action: pan-y; }
+  .modal.closing { animation: sheet-down 0.22s cubic-bezier(0.3, 0, 0.8, 0.15) both; }
+}
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes sheet-down { to { transform: translateY(105%); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { to { opacity: 0; } }
+
+/* ---------- 7. toasts ---------- */
+.toast { animation: toast-rise var(--dur-snappy) var(--ease-snappy) both; }
+@keyframes toast-rise { from { opacity: 0; translate: 0 16px; scale: 0.92; } to { opacity: 1; translate: 0 0; scale: 1; } }
+/* Liquid Glass: notifications drop from the top, out of the Dynamic Island */
+html[data-design="glass"] .toast { top: calc(10px + env(safe-area-inset-top, 0px)); bottom: auto; animation: island-drop var(--dur-bouncy) var(--ease-bouncy) both; transform-origin: top center; }
+@keyframes island-drop { from { opacity: 0; translate: 0 -30px; scale: 0.5 0.4; } to { opacity: 1; translate: 0 0; scale: 1; } }
+
+/* ---------- 8. reviewer ---------- */
+@supports not (view-transition-name: none) {
+  .cardview { animation: card-rise var(--dur-snappy) var(--ease-snappy) both; }
+}
+.answer-buttons { animation: none; }
+.answer-buttons button { animation: rise-in var(--dur-snappy) var(--ease-snappy) both; }
+.answer-buttons button:nth-child(2) { animation-delay: 25ms; }
+.answer-buttons button:nth-child(3) { animation-delay: 50ms; }
+.answer-buttons button:nth-child(4) { animation-delay: 75ms; }
+@keyframes rise-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes card-rise { from { opacity: 0; transform: translateY(18px) scale(0.97); } to { opacity: 1; transform: none; } }
+.progress > div, .meter > div { transition: width var(--dur-smooth) var(--ease-smooth); }
+
+/* ---------- 9. rolling numbers (numeric text transition) ---------- */
+.rolling { display: inline-flex; overflow: hidden; padding: 0.06em 0; margin: -0.06em 0; vertical-align: top; font-variant-numeric: tabular-nums; }
+.rolling .digit { display: inline-block; }
+.digit.roll-up { animation: roll-up var(--dur-snappy) var(--ease-snappy) both; }
+.digit.roll-down { animation: roll-down var(--dur-snappy) var(--ease-snappy) both; }
+@keyframes roll-up { from { opacity: 0; transform: translateY(75%); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes roll-down { from { opacity: 0; transform: translateY(-75%); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+
+/* ---------- 10. lessons ---------- */
+.feedback { animation: rise-in var(--dur-snappy) var(--ease-snappy) both; }
+.fb-title { display: flex; align-items: center; gap: 8px; }
+.fb-icon .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 0.35s ease-out 0.08s forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.option.wrong:disabled { animation: shake 0.42s ease-out; }
+.option.correct:disabled { animation: correct-pop var(--dur-bouncy) var(--ease-bouncy); }
+@keyframes shake { 0%, 100% { transform: none; } 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+@keyframes correct-pop { 0% { scale: 0.97; } 100% { scale: 1; } }
+.acc-ring { display: block; margin: 6px 0 10px; }
+.ring-track { stroke: var(--line); }
+.ring-fill { stroke: var(--good); animation: ring-fill 1.1s var(--ease-smooth) 0.15s both; }
+@keyframes ring-fill { from { stroke-dashoffset: var(--c); } }
+.meter > div { animation: meter-fill var(--dur-smooth) var(--ease-smooth) both; }
+@keyframes meter-fill { from { width: 0; } }
+
+/* ---------- 11. charts and pages ---------- */
+.bars div { transform-origin: bottom; animation: bar-grow var(--dur-smooth) var(--ease-smooth) both; animation-delay: calc(var(--i, 0) * 8ms); }
+@keyframes bar-grow { from { transform: scaleY(0); } }
+@supports not (view-transition-name: none) {
+  .page { animation: fade-in 0.18s ease-out; }
+}
+
+/* ---------- 12. screen transitions (View Transitions API; see src/ui/motion.ts) ---------- */
+::view-transition { pointer-events: none; } /* taps go straight to the new screen: nothing waits for an animation */
+/* names only while a transition runs: a view-transition-name creates a stacking context, which would
+   otherwise trap menus and the context-menu scrim underneath the tab bar */
+/* screens are opaque while they move, like a pushed view controller, so one never shows through the other */
+html[data-nav] .main { view-transition-name: screen; background: var(--bg); }
+html[data-nav] .rail { view-transition-name: tabbar; }
+html:is([data-nav="zoom"], [data-nav="unzoom"]) .hero-cta { view-transition-name: hero-cta; }
+html[data-nav^="card"] .reviewer .cardview { view-transition-name: card; }
+::view-transition-group(tabbar) { z-index: 3; }
+::view-transition-group(hero-cta) { z-index: 2; }
+::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation-duration: 0.3s; }
+/* the tab bar materializes when coming back from a full-screen session, and dematerializes going in */
+::view-transition-new(tabbar):only-child { animation: materialize var(--dur-snappy) var(--ease-snappy) both; }
+::view-transition-old(tabbar):only-child { animation: dematerialize 0.2s ease-in both; }
+@keyframes dematerialize { to { opacity: 0; scale: 0.8; filter: blur(8px); } }
+
+/* tab switch: a quick crossfade (tabs don't slide on iOS) */
+html[data-nav="tab"]::view-transition-old(screen) { animation: fade-out 0.14s ease-out both; }
+html[data-nav="tab"]::view-transition-new(screen) { animation: fade-in 0.2s ease-out 0.03s both; }
+
+/* push: the new screen slides in from the right; the old one slides a third left and dims (parallax) */
+html:is([data-nav="push"], [data-nav="pop"], [data-nav="sheet"], [data-nav="unsheet"])::view-transition-old(screen),
+html:is([data-nav="push"], [data-nav="pop"], [data-nav="sheet"], [data-nav="unsheet"])::view-transition-new(screen) {
+  mix-blend-mode: normal; animation-duration: var(--dur-smooth); animation-timing-function: var(--ease-smooth); animation-fill-mode: both;
+}
+html[data-nav="push"]::view-transition-old(screen) { animation-name: slide-under; }
+html[data-nav="push"]::view-transition-new(screen) { animation-name: slide-in-right; filter: drop-shadow(-8px 0 24px rgba(0, 0, 0, 0.18)); }
+html[data-nav="pop"]::view-transition-old(screen) { animation-name: slide-out-right; z-index: 1; filter: drop-shadow(-8px 0 24px rgba(0, 0, 0, 0.18)); }
+html[data-nav="pop"]::view-transition-new(screen) { animation-name: slide-from-under; }
+@keyframes slide-in-right { from { transform: translateX(100%); } }
+@keyframes slide-out-right { to { transform: translateX(100%); } }
+@keyframes slide-under { to { transform: translateX(-28%); filter: brightness(0.8); } }
+@keyframes slide-from-under { from { transform: translateX(-28%); filter: brightness(0.8); } }
+/* sheet: a modal screen rises from the bottom over a slightly receding one */
+html[data-nav="sheet"]::view-transition-old(screen) { animation-name: recede; }
+html[data-nav="sheet"]::view-transition-new(screen) { animation-name: rise-from-bottom; animation-timing-function: var(--ease-snappy); }
+html[data-nav="unsheet"]::view-transition-old(screen) { animation-name: sink; z-index: 1; animation-duration: 0.3s; animation-timing-function: cubic-bezier(0.3, 0, 0.8, 0.15); }
+html[data-nav="unsheet"]::view-transition-new(screen) { animation-name: unrecede; }
+@keyframes rise-from-bottom { from { transform: translateY(100%); } }
+@keyframes sink { to { transform: translateY(100%); } }
+@keyframes recede { to { transform: scale(0.95); filter: brightness(0.85); border-radius: 20px; } }
+@keyframes unrecede { from { transform: scale(0.95); filter: brightness(0.85); } }
+/* zoom: "Start session" grows into the full-screen reviewer (and shrinks back on close) */
+html:is([data-nav="zoom"], [data-nav="unzoom"])::view-transition-group(hero-cta) { animation-duration: var(--dur-snappy); animation-timing-function: var(--ease-snappy); }
+html:is([data-nav="zoom"], [data-nav="unzoom"]) .hero-cta:not(button) { background: var(--bg); } /* the expanding shape is visible */
+html:is([data-nav="zoom"], [data-nav="unzoom"])::view-transition-group(hero-cta) { box-shadow: 0 18px 50px rgba(0, 0, 0, 0.16); border-radius: 26px; }
+html:is([data-nav="zoom"], [data-nav="unzoom"])::view-transition-image-pair(hero-cta) { overflow: hidden; border-radius: 26px; }
+/* both snapshots fill the morphing shape without stretching: the button dissolves almost at once and the
+   destination is revealed through the growing shape, anchored at its top (like iOS 18's zoom transition) */
+html:is([data-nav="zoom"], [data-nav="unzoom"])::view-transition-old(hero-cta),
+html:is([data-nav="zoom"], [data-nav="unzoom"])::view-transition-new(hero-cta) { height: 100%; object-fit: cover; object-position: top center; }
+html[data-nav="zoom"]::view-transition-old(hero-cta) { animation: fade-out 0.12s linear both; }
+html[data-nav="zoom"]::view-transition-new(hero-cta) { animation: fade-in 0.12s linear both; }
+html[data-nav="unzoom"]::view-transition-old(hero-cta) { animation: fade-out 0.14s linear 0.1s both; }
+html[data-nav="unzoom"]::view-transition-new(hero-cta) { animation: fade-in 0.14s linear 0.1s both; }
+html[data-nav="zoom"]::view-transition-old(screen) { animation: fade-out 0.22s ease-out both; }
+html[data-nav="zoom"]::view-transition-new(screen) { animation: zoom-in var(--dur-snappy) var(--ease-snappy) both; }
+html[data-nav="unzoom"]::view-transition-old(screen) { animation: zoom-out 0.25s ease-in both; }
+html[data-nav="unzoom"]::view-transition-new(screen) { animation: fade-in 0.25s ease-out 0.05s both; }
+@keyframes zoom-in { from { opacity: 0; transform: scale(0.94); } }
+@keyframes zoom-out { to { opacity: 0; transform: scale(0.96); } }
+/* reviewer: the answered card flies off in the answer's direction; the next one rises in */
+html[data-nav^="card"]::view-transition-group(screen) { animation-duration: 0.2s; }
+html[data-nav^="card"]::view-transition-old(screen), html[data-nav^="card"]::view-transition-new(screen) { animation-duration: 0.15s; }
+html[data-nav="card-good"]::view-transition-old(card-old) { animation: fly-right 0.34s cubic-bezier(0.4, 0, 0.9, 0.5) both; }
+html[data-nav="card-again"]::view-transition-old(card-old) { animation: fly-left 0.34s cubic-bezier(0.4, 0, 0.9, 0.5) both; }
+html:is([data-nav="card-good"], [data-nav="card-again"])::view-transition-new(card) { animation: card-rise var(--dur-snappy) var(--ease-snappy) 0.05s both; }
+@keyframes fly-right { to { transform: translateX(80vw) rotate(10deg); opacity: 0; } }
+@keyframes fly-left { to { transform: translateX(-80vw) rotate(-10deg); opacity: 0; } }
+/* showing the answer: the card morphs to its new height while the contents crossfade */
+html[data-nav="card"]::view-transition-group(card) { animation-duration: var(--dur-snappy); animation-timing-function: var(--ease-snappy); }
+html[data-nav="card"]::view-transition-old(card), html[data-nav="card"]::view-transition-new(card) { animation-duration: 0.2s; height: 100%; object-fit: none; object-position: top; }
+
+/* Reduce Motion (set by motion.ts): every screen change is a short dissolve, nothing moves */
+html[data-nav="fade"]::view-transition-group(*) { animation: none; }
+html[data-nav="fade"]::view-transition-old(*) { animation: fade-out 0.18s ease-out both; }
+html[data-nav="fade"]::view-transition-new(*) { animation: fade-in 0.18s ease-out both; }
+
+/* ---------- 13. Reduce Motion ----------
+   Apple: "decreases the intensity of some effects and disables any elastic properties".
+   Movement becomes a quick dissolve; springs lose their bounce; direct manipulation (dragging) still follows the finger. */
+@media (prefers-reduced-motion: reduce) {
+  :root { --ease-bouncy: ease-out; --ease-snappy: ease-out; --ease-smooth: ease-out; --dur-bouncy: 0.2s; --dur-snappy: 0.2s; --dur-smooth: 0.2s; }
+  :is(.cardview, .answer-buttons button, .menu, .modal, .modal-bg, .toast, .feedback, .digit.roll-up, .digit.roll-down,
+      .rail-item.on svg, .rail-droplet.gel, .decklist tr.lifted, .option.wrong:disabled, .option.correct:disabled, .context-scrim) {
+    animation-name: rm-fade !important; animation-duration: 0.18s !important; animation-delay: 0s !important; animation-timing-function: ease-out !important;
+  }
+  :is(.modal, .modal-bg).closing { animation-name: rm-fade-out !important; }
+  :is(.bars div, .meter > div, .ring-fill, .fb-icon .draw) { animation: none !important; }
+  .fb-icon .draw { stroke-dashoffset: 0; }
+  :is(button, .rail-item, .option, .tile) { transform: none !important; }
+  .rail-droplet { transition-property: opacity, background-color !important; }
+  .decklist tr.lifted { scale: 1; }
+  html[data-design="glass"] button::after { scale: 1 !important; }
+}
+@keyframes rm-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rm-fade-out { to { opacity: 0; } }
+
+/* ---------- 14. Reduce Transparency / Increase Contrast ----------
+   Apple: Reduce Transparency makes glass "frostier"; Increase Contrast makes it mostly black or white with a border.
+   Safari doesn't expose Reduce Transparency to web pages, so Preferences has its own switch (.solid-glass). */
+html.solid-glass[data-design="glass"] { --glass-bg: var(--raised); --glass-strong: var(--raised); }
+html.solid-glass[data-design="glass"] :is(.rail, .menu, .toast, .modal, .topbar button, .review-head button.icon, .answer-buttons button, .context-scrim, .topbar::before, .shell::after) {
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+html.solid-glass[data-design="glass"] .topbar::before { background: var(--bg); -webkit-mask-image: none; mask-image: none; }
+@media (prefers-reduced-transparency: reduce) {
+  html[data-design="glass"] { --glass-bg: var(--raised); --glass-strong: var(--raised); }
+  html[data-design="glass"] :is(.rail, .menu, .toast, .modal, .topbar button, .review-head button.icon, .answer-buttons button, .context-scrim) {
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+}
+@media (prefers-contrast: more) {
+  html[data-design="glass"] { --glass-bg: var(--raised); --glass-strong: var(--raised); --muted: var(--fg-2); }
+  html[data-design="glass"] :is(.rail, .menu, .toast, .modal, .topbar button, .review-head button.icon, .answer-buttons button) {
+    box-shadow: 0 0 0 1.5px var(--fg) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+  }
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { store, useCol } from "../lib/store";
 import { AddNote } from "./AddNote";
 import { Browser } from "./Browser";
@@ -15,6 +15,33 @@ import { Overview } from "./Overview";
 import { Prefs } from "./Prefs";
 import { Stats } from "./Stats";
 import { Study } from "./Study";
+import { transition, type NavKind } from "./motion";
+
+// ---------- navigation model (drives iOS-style transitions and the back button) ----------
+type Name = Route["name"];
+const SECTION: Record<Name, string> = {
+  decks: "today", overview: "today", options: "today", filtered: "today", custom: "today", study: "today",
+  courses: "courses", course: "courses", lesson: "courses",
+  browse: "browse", add: "browse", stats: "stats",
+  notetypes: "more", import: "more", export: "more", prefs: "more",
+};
+const DEPTH: Record<Name, number> = {
+  decks: 0, courses: 0, browse: 0, stats: 0, notetypes: 0, import: 0, export: 0, prefs: 0,
+  overview: 1, filtered: 1, course: 1, add: 1, options: 2, custom: 2, study: 2, lesson: 2,
+};
+const TITLES: Partial<Record<Name, string>> = {
+  decks: "Today", courses: "Courses", browse: "Browse", add: "Add", stats: "Statistics", options: "Deck Options",
+  filtered: "Filtered Deck", custom: "Custom Study", notetypes: "Note Types", import: "Import", export: "Export", prefs: "Preferences",
+};
+
+function kindFor(from: Route, to: Route): NavKind {
+  if (to.name === "add" && from.name !== "add") return "sheet";
+  if (from.name === "add" && to.name !== "add") return "unsheet";
+  if (to.name === "study" || to.name === "lesson") return "zoom";
+  if (from.name === "study" || from.name === "lesson") return "unzoom";
+  if (SECTION[from.name] !== SECTION[to.name] || (DEPTH[from.name] === 0 && DEPTH[to.name] === 0)) return "tab";
+  return DEPTH[to.name] >= DEPTH[from.name] ? "push" : "pop";
+}
 
 /** Which design to show: the saved preference, else a page-level default (the iOS preview sets one), else Focus. */
 export function currentDesign(pref?: "focus" | "glass"): "focus" | "glass" {
@@ -24,6 +51,7 @@ export function currentDesign(pref?: "focus" | "glass"): "focus" | "glass" {
 export function App() {
   const col = useCol();
   document.documentElement.dataset.design = currentDesign(col.d.prefs.design);
+  document.documentElement.classList.toggle("solid-glass", !!col.d.prefs.reduceTransparency);
 
   // Liquid Glass: the tab bar shrinks while scrolling down and comes back when scrolling up (iOS 26)
   useEffect(() => {
@@ -34,6 +62,9 @@ export function App() {
       const root = document.documentElement;
       if (top > 80 && top - last > 4) root.classList.add("tabs-min");
       else if (top - last < -4 || top <= 80) root.classList.remove("tabs-min");
+      // scroll edge effect under the top bar, and the large title collapsing into the bar
+      root.classList.toggle("scrolled", top > 4);
+      root.classList.toggle("title-collapsed", top > 52);
       last = top;
     };
     document.addEventListener("scroll", onScroll, true);
@@ -48,12 +79,22 @@ export function App() {
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setMsg(null), 2500);
   }, []);
-  const go = useCallback((r: Route) => setRoute(r), []);
+  // every navigation goes through here so it gets the right iOS transition
+  const routeRef = useRef(route);
+  routeRef.current = route;
+  const beforeAdd = useRef<Route>({ name: "decks" });
+  const go = useCallback((r: Route) => {
+    const from = routeRef.current;
+    if (r.name === "add" && from.name !== "add") beforeAdd.current = from;
+    transition(kindFor(from, r), () => setRoute(r));
+  }, []);
 
-  // a new screen starts at the top with the tab bar expanded
-  useEffect(() => {
-    document.documentElement.classList.remove("tabs-min");
+  // a new screen starts at the top with the tab bar expanded (layout effect: before the transition's snapshot)
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.classList.remove("tabs-min", "scrolled", "title-collapsed");
     document.querySelector(".main")?.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
   }, [route]);
 
   // global shortcuts
@@ -70,31 +111,96 @@ export function App() {
       }
       if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
       const k = e.key.toLowerCase();
-      if (k === "d") setRoute({ name: "decks" });
-      else if (k === "a") setRoute({ name: "add" });
-      else if (k === "b") setRoute({ name: "browse" });
-      else if (k === "t") setRoute({ name: "stats" });
-      else if (k === "/" && route.name === "decks") setRoute({ name: "study", did: store.col.d.prefs.currentDeck });
-      else if (k === "f" && route.name === "decks") setRoute({ name: "filtered" });
+      if (k === "d") go({ name: "decks" });
+      else if (k === "a") go({ name: "add" });
+      else if (k === "b") go({ name: "browse" });
+      else if (k === "t") go({ name: "stats" });
+      else if (k === "/" && route.name === "decks") go({ name: "study", did: store.col.d.prefs.currentDeck });
+      else if (k === "f" && route.name === "decks") go({ name: "filtered" });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [route, toast]);
+  }, [route, toast, go]);
 
   const [more, setMore] = useState(false);
-  const railItem = (label: string, icon: ReactNode, r: Route, names: Route["name"][]) => (
+  // a sheet (Add) belongs to the tab it was opened from, so the tab bar doesn't move under it
+  const sectionOf = (r: Route) => SECTION[r.name === "add" ? beforeAdd.current.name : r.name];
+  const railItem = (label: string, icon: ReactNode, r: Route, section: string) => (
     <button
-      className={`rail-item${names.includes(route.name) ? " on" : ""}`}
-      aria-current={names.includes(route.name) ? "page" : undefined}
+      className={`rail-item${sectionOf(route) === section ? " on" : ""}`}
+      aria-current={sectionOf(route) === section ? "page" : undefined}
       onClick={() => {
         setMore(false);
-        setRoute(r);
+        go(r);
       }}
     >
       {icon}
-      {label}
+      <span className="rail-label">{label}</span>
     </button>
   );
+
+  // the selection "droplet": one glass pill that slides between tabs instead of each tab lighting up
+  const railRef = useRef<HTMLElement>(null);
+  const dropRef = useRef<HTMLSpanElement>(null);
+  const placeDroplet = useCallback((animate: boolean) => {
+    const rail = railRef.current;
+    const drop = dropRef.current;
+    if (!rail || !drop) return;
+    const on = rail.querySelector<HTMLElement>(".rail-item.on");
+    if (!on) {
+      drop.style.opacity = "0";
+      return;
+    }
+    const r = rail.getBoundingClientRect();
+    const b = on.getBoundingClientRect();
+    if (!animate) drop.style.transition = "none";
+    drop.style.opacity = "1";
+    drop.style.width = `${b.width}px`;
+    drop.style.height = `${b.height}px`;
+    drop.style.transform = `translate(${b.left - r.left - rail.clientLeft}px, ${b.top - r.top - rail.clientTop}px)`;
+    if (!animate) {
+      void drop.offsetWidth;
+      drop.style.transition = "";
+    } else {
+      drop.classList.remove("gel");
+      void drop.offsetWidth;
+      drop.classList.add("gel");
+    }
+  }, []);
+  const lastSection = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    const sec = sectionOf(route) + (more ? "+more" : "");
+    placeDroplet(lastSection.current !== null && lastSection.current !== sec);
+    lastSection.current = sec;
+  });
+  useEffect(() => {
+    const onResize = () => placeDroplet(false);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [placeDroplet]);
+
+  // iOS back button for screens deeper than a tab's root
+  const backTo: Route | null = (() => {
+    switch (route.name) {
+      case "overview":
+      case "filtered":
+        return { name: "decks" };
+      case "options":
+      case "custom":
+        return { name: "overview", did: route.did };
+      case "course":
+        return { name: "courses" };
+      case "add":
+        return beforeAdd.current;
+      default:
+        return null;
+    }
+  })();
+  const titleFor = (r: Route): string => {
+    if (r.name === "overview") return col.deck(r.did)?.name.split("::").pop() ?? "Deck";
+    if (r.name === "course") return col.d.courses[r.id]?.title ?? "Course";
+    return TITLES[r.name] ?? "";
+  };
 
   let page;
   switch (route.name) {
@@ -150,7 +256,6 @@ export function App() {
 
   // study and lessons take the whole screen, on desktop and phone alike
   const focus = route.name === "study" || route.name === "lesson";
-  const moreNames: Route["name"][] = ["notetypes", "import", "export", "prefs"];
 
   return (
     <Nav.Provider value={{ go, toast, route }}>
@@ -159,7 +264,8 @@ export function App() {
       ) : (
         <div className="shell">
           <nav
-            className="rail"
+            ref={railRef}
+            className="rail has-droplet"
             aria-label="Sections"
             onClickCapture={(e) => {
               // tapping the minimized tab bar expands it first (iOS 26)
@@ -171,20 +277,21 @@ export function App() {
               }
             }}
           >
+            <span ref={dropRef} className="rail-droplet" aria-hidden="true" />
             <div className="logo" aria-hidden="true" />
-            {railItem("Today", ICONS.today, { name: "decks" }, ["decks", "overview", "options", "filtered", "custom"])}
-            {railItem("Courses", ICONS.courses, { name: "courses" }, ["courses", "course"])}
-            {railItem("Browse", ICONS.browse, { name: "browse" }, ["browse", "add"])}
-            {railItem("Stats", ICONS.stats, { name: "stats" }, ["stats"])}
+            {railItem("Today", ICONS.today, { name: "decks" }, "today")}
+            {railItem("Courses", ICONS.courses, { name: "courses" }, "courses")}
+            {railItem("Browse", ICONS.browse, { name: "browse" }, "browse")}
+            {railItem("Stats", ICONS.stats, { name: "stats" }, "stats")}
             <div className="rail-spacer" />
             <div className="rail-more">
               <button
-                className={`rail-item${moreNames.includes(route.name) || more ? " on" : ""}`}
+                className={`rail-item${sectionOf(route) === "more" || more ? " on" : ""}`}
                 aria-expanded={more}
                 onClick={() => setMore(!more)}
               >
                 {ICONS.more}
-                More
+                <span className="rail-label">More</span>
               </button>
               {more && (
                 <div className="menu" onMouseLeave={() => setMore(false)}>
@@ -200,7 +307,7 @@ export function App() {
                       key={l}
                       onClick={() => {
                         setMore(false);
-                        setRoute(r);
+                        go(r);
                       }}
                     >
                       {l}
@@ -213,7 +320,16 @@ export function App() {
           <div className="main">
             <header className="topbar">
               <div className="logo" aria-hidden="true" />
-              <button className="searchbtn" aria-label="Search cards" onClick={() => setRoute({ name: "browse" })}>
+              {backTo && (
+                <button className="backbtn" onClick={() => go(backTo)} aria-label={`Back to ${titleFor(backTo)}`}>
+                  {ICONS.back}
+                  <span className="back-label">{titleFor(backTo)}</span>
+                </button>
+              )}
+              <div className="topbar-title" aria-hidden="true">
+                {titleFor(route)}
+              </div>
+              <button className="searchbtn" aria-label="Search cards" onClick={() => go({ name: "browse" })}>
                 {ICONS.search}
                 <span className="label">Search cards</span>
                 <span className="kbd">B</span>
@@ -230,7 +346,7 @@ export function App() {
               >
                 {ICONS.undo}
               </button>
-              <button onClick={() => setRoute({ name: "add" })} aria-label="Add card">
+              <button onClick={() => go({ name: "add" })} aria-label="Add card">
                 + Add
               </button>
             </header>
@@ -282,4 +398,5 @@ const ICONS = {
     </>,
   ),
   undo: svg(<path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3" />),
+  back: svg(<path d="M15 5l-7 7 7 7" />),
 };

@@ -180,6 +180,8 @@ export interface Prefs {
   haptics: boolean;
   /** UI design: "focus" (dark, Vocla's own) or "glass" (Liquid Glass, like a stock iOS app). Unset = app default. */
   design?: "focus" | "glass";
+  /** Solid instead of translucent glass (Safari doesn't expose the system Reduce Transparency setting). */
+  reduceTransparency?: boolean;
 }
 
 export interface Collection {

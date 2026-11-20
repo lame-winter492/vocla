@@ -116,7 +116,6 @@ html[data-design="glass"] button.big { min-height: 52px; font-size: 17px; border
 html[data-design="glass"] button.ghost { background: transparent; color: var(--accent); }
 html[data-design="glass"] button.danger { color: var(--again); }
 html[data-design="glass"] button.icon { width: 44px; height: 44px; padding: 0; color: var(--fg); }
-html[data-design="glass"] button:active:not(:disabled) { transform: scale(0.94); }
 
 /* ---------- inputs ---------- */
 html[data-design="glass"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
@@ -139,7 +138,12 @@ html[data-design="glass"] input[type="checkbox"]:checked::after { transform: tra
 html[data-design="glass"] fieldset { background: var(--surface); border: 0; border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 26px; }
 html[data-design="glass"] legend { float: left; width: 100%; padding: 0 0 6px; margin: -2px 0 6px; font-size: 13px; font-weight: 400; color: var(--muted); border-bottom: 0.5px solid var(--line); }
 html[data-design="glass"] .panel, html[data-design="glass"] .tablewrap { background: var(--surface); border: 0; border-radius: var(--radius-lg); }
-html[data-design="glass"] .decklist { background: var(--surface); border-radius: var(--radius-lg); border-collapse: separate; border-spacing: 0; overflow: hidden; }
+html[data-design="glass"] .decklist { background: var(--surface); border-radius: var(--radius-lg); border-collapse: separate; border-spacing: 0; }
+/* round the corner cells instead of clipping the table, so row menus can extend past it */
+html[data-design="glass"] .decklist tr:first-child td:first-child { border-top-left-radius: var(--radius-lg); }
+html[data-design="glass"] .decklist tr:first-child td:last-child { border-top-right-radius: var(--radius-lg); }
+html[data-design="glass"] .decklist tr:last-child td:first-child { border-bottom-left-radius: var(--radius-lg); }
+html[data-design="glass"] .decklist tr:last-child td:last-child { border-bottom-right-radius: var(--radius-lg); }
 html[data-design="glass"] .decklist td { border-top: 0.5px solid var(--line); padding: 12px 10px; }
 html[data-design="glass"] .decklist tr:first-child td { border-top: 0; }
 html[data-design="glass"] .decklist .deck-name { font-weight: 400; font-size: 17px; }
@@ -191,6 +195,7 @@ html[data-design="glass"] .reviewer .cardarea { padding-top: 12px; }
 html[data-design="glass"] .reviewer .meta { padding: 0 6px 8px; }
 html[data-design="glass"] .reviewer .bottom { background: transparent; }
 html[data-design="glass"] .reveal { max-width: 420px; }
+html[data-design="glass"] .reviewer button.reveal { margin-block: 7px; } /* 52 + 2×7 = 66 */
 html[data-design="glass"] .answer-buttons { gap: 10px; }
 html[data-design="glass"] .answer-buttons button { border-radius: 22px; min-height: 66px; }
 html[data-design="glass"] .answer-buttons button.ease3 { box-shadow: var(--glass-rim), var(--glass-shadow), inset 0 0 0 2px color-mix(in srgb, var(--good) 70%, transparent); }

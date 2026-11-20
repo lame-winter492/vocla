@@ -34,6 +34,15 @@ export function Prefs() {
           <input type="radio" name="design" checked={currentDesign(p.design) === "glass"} onChange={() => set(() => (p.design = "glass"))} /> Liquid
           Glass: like a built-in iOS app, follows light/dark mode
         </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={!!p.reduceTransparency}
+            onChange={(e) => set(() => (p.reduceTransparency = e.target.checked))}
+          />{" "}
+          Reduce transparency (solid bars and menus instead of glass)
+        </label>
+        <div className="small muted">Animations follow your device&#39;s Reduce Motion setting.</div>
       </fieldset>
       <fieldset>
         <legend>Learning</legend>

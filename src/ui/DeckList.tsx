@@ -1,22 +1,40 @@
 // "Today": the home screen. One big number, one Start button, then the decks.
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ALL_DECKS, type DeckTreeNode } from "../lib/col";
 import { allLessons, isUnlocked, streak } from "../lib/courses";
 import { store, useCol } from "../lib/store";
 import { dayNumber, formatIvlSecs } from "../lib/time";
 import { askConfirm, askText } from "./dialog";
 import { useNav } from "./nav";
+import { haptic } from "./haptics";
+import { longPress } from "./motion";
+import { RollingNumber } from "./RollingNumber";
+
+// the number shown last time, so returning to Today rolls from the old count to the new one
+let lastShownTotal: number | null = null;
 
 export function DeckList() {
   const col = useCol();
   const { go, toast } = useNav();
   const tree = col.deckTree();
   const [menu, setMenu] = useState<number | null>(null);
+  const [lifted, setLifted] = useState(false); // long-press context menu: row lifted above a blurred scrim
+  const firedRef = useRef(false);
+  const closeMenu = () => {
+    setMenu(null);
+    setLifted(false);
+  };
   const roll = col.d.prefs.rolloverHour;
   const today = col.today();
 
   const all = col.counts(ALL_DECKS);
   const total = all.newCount + all.learnCount + all.reviewCount;
+  const [shown, setShown] = useState(lastShownTotal ?? total);
+  useEffect(() => {
+    const t = setTimeout(() => setShown(total), lastShownTotal !== null && lastShownTotal !== total ? 350 : 0);
+    lastShownTotal = total;
+    return () => clearTimeout(t);
+  }, [total]);
 
   // estimate from the last few hundred answers (8 s per card until there is history)
   const recent = col.d.revlog.filter((r) => r.ease > 0).slice(-300);
@@ -53,7 +71,24 @@ export function DeckList() {
       const d = n.deck;
       const due = n.counts.reviewCount + n.counts.learnCount;
       rows.push(
-        <tr key={d.id}>
+        <tr
+          key={d.id}
+          className={lifted && menu === d.id ? "lifted" : undefined}
+          {...longPress(() => {
+            firedRef.current = true;
+            haptic("tap");
+            setMenu(d.id);
+            setLifted(true);
+          })}
+          onClickCapture={(e) => {
+            // the release that ends a long press must not also open the deck
+            if (firedRef.current) {
+              firedRef.current = false;
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+        >
           <td style={{ paddingLeft: 4 + n.depth * 22 }}>
             {n.children.length > 0 ? (
               <a className="twisty" onClick={() => store.mutate(() => (d.collapsed = !d.collapsed))} aria-label={d.collapsed ? "Expand" : "Collapse"}>
@@ -80,11 +115,11 @@ export function DeckList() {
               ⋯
             </button>
             {menu === d.id && (
-              <div className="menu" onMouseLeave={() => setMenu(null)}>
+              <div className="menu" onMouseLeave={() => !lifted && setMenu(null)}>
                 <button onClick={() => go({ name: "overview", did: d.id })}>Open</button>
                 <button
                   onClick={async () => {
-                    setMenu(null);
+                    closeMenu();
                     const name = await askText("Rename deck:", d.name);
                     if (name)
                       try {
@@ -102,7 +137,7 @@ export function DeckList() {
                 <button
                   className="danger"
                   onClick={async () => {
-                    setMenu(null);
+                    closeMenu();
                     const sub = col.deckAndChildren(d.id);
                     const ids = new Set(sub.map((x) => x.id));
                     const cards = Object.values(col.d.cards).filter((c) => ids.has(c.did)).length;
@@ -126,6 +161,7 @@ export function DeckList() {
 
   return (
     <div className="page today">
+      {lifted && <div className="context-scrim" onClick={closeMenu} onContextMenu={(e) => (e.preventDefault(), closeMenu())} />}
       <h1 className="large-title">Today</h1>
       <section className="hero" aria-label="Today">
         <div className="muted">
@@ -136,13 +172,19 @@ export function DeckList() {
         {total > 0 ? (
           <>
             <div className="big-number">
-              <b>{total}</b>
+              <b>
+                <RollingNumber value={shown} />
+              </b>
               <span>{total === 1 ? "card for today" : "cards for today"}</span>
             </div>
             <div className="breakdown">
               {all.reviewCount} due · {all.learnCount} learning · {all.newCount} new · about {minutes} min
             </div>
-            <button className="primary big" autoFocus onClick={() => go({ name: "study", did: ALL_DECKS })}>
+            <button
+              className="primary big hero-cta"
+              autoFocus
+              onClick={() => go({ name: "study", did: ALL_DECKS })}
+            >
               Start session →
             </button>
           </>
@@ -157,7 +199,7 @@ export function DeckList() {
             </div>
             {nextLesson ? (
               <button
-                className="primary big"
+                className="primary big hero-cta"
                 onClick={() => go({ name: "lesson", courseId: nextLesson.course.id, lessonId: nextLesson.lesson.id })}
               >
                 Continue course →

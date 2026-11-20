@@ -15,6 +15,7 @@ import { download } from "../lib/importexport";
 import { store, useCol } from "../lib/store";
 import { useNav } from "./nav";
 import { haptic } from "./haptics";
+import { RollingNumber } from "./RollingNumber";
 
 const speak = (text: string, lang: string) => (window as any).voclaSpeak?.(text, lang);
 
@@ -144,7 +145,11 @@ export function CourseView({ id }: { id: string }) {
                           Tips
                         </button>
                       )}{" "}
-                      <button className={open && !res ? "primary" : ""} disabled={!open} onClick={() => go({ name: "lesson", courseId: course.id, lessonId: l.id })}>
+                      <button
+                        className={open && !res ? "primary hero-cta" : ""}
+                        disabled={!open}
+                        onClick={() => go({ name: "lesson", courseId: course.id, lessonId: l.id })}
+                      >
                         {res ? "Practice" : "Start"}
                       </button>
                     </td>
@@ -221,10 +226,11 @@ export function LessonPlayer({ courseId, lessonId }: { courseId: string; lessonI
 
   if (done) {
     return (
-      <div className="page narrow overview">
+      <div className="page narrow overview lesson-done hero-cta">
+        <AccuracyRing value={done.accuracy} />
         <h2>Lesson complete!</h2>
         <p className="xp" style={{ fontSize: "var(--fs-lg)" }}>
-          +{done.xp} XP · {Math.round(done.accuracy * 100)}% accuracy
+          +<CountUp to={done.xp} /> XP · {Math.round(done.accuracy * 100)}% accuracy
         </p>
         <div className="row" style={{ justifyContent: "center" }}>
           <button className="primary" autoFocus onClick={() => go({ name: "course", id: courseId })}>
@@ -248,7 +254,7 @@ export function LessonPlayer({ courseId, lessonId }: { courseId: string; lessonI
   if (!cur) return <div className="page">This lesson has no exercises.</div>;
 
   return (
-    <div className="page narrow">
+    <div className="page narrow hero-cta">
       <div className="lesson-head">
         <button
           className="ghost"
@@ -286,7 +292,12 @@ function Feedback({ fb, onContinue }: { fb: { result: Result; correct: string };
   const ok = fb.result !== "wrong";
   return (
     <div className={`feedback ${ok ? "good" : "bad"}`}>
-      <b>{fb.result === "correct" ? "Correct!" : fb.result === "accent" ? "Almost. Watch the accents:" : "Correct answer:"}</b>
+      <b className="fb-title">
+        <svg className="fb-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          {ok ? <path className="draw" d="M5 12.5l4.5 4.5L19 7.5" pathLength={1} /> : <path className="draw" d="M6.5 6.5l11 11M17.5 6.5l-11 11" pathLength={1} />}
+        </svg>
+        {fb.result === "correct" ? "Correct!" : fb.result === "accent" ? "Almost. Watch the accents:" : "Correct answer:"}
+      </b>
       {fb.result !== "correct" && fb.correct && <div>{fb.correct}</div>}
       <div className="row">
         <button className="primary" onClick={onContinue}>
@@ -542,4 +553,38 @@ function MatchEx({ ex, lang, onSubmit }: ExProps & { ex: Extract<Exercise, { typ
       {mistakes > 0 && <p className="small muted">{mistakes} mistake{mistakes > 1 ? "s" : ""}</p>}
     </div>
   );
+}
+
+// ---------- lesson complete ----------
+
+/** Activity-style ring that fills to the lesson's accuracy. */
+function AccuracyRing({ value }: { value: number }) {
+  const r = 46;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg className="acc-ring" width="120" height="120" viewBox="0 0 120 120" role="img" aria-label={`${Math.round(value * 100)}% accuracy`}>
+      <circle cx="60" cy="60" r={r} fill="none" strokeWidth="12" className="ring-track" />
+      <circle
+        cx="60"
+        cy="60"
+        r={r}
+        fill="none"
+        strokeWidth="12"
+        strokeLinecap="round"
+        className="ring-fill"
+        transform="rotate(-90 60 60)"
+        style={{ strokeDasharray: c, strokeDashoffset: c * (1 - Math.max(0.02, value)), ["--c" as string]: c }}
+      />
+    </svg>
+  );
+}
+
+/** Counts up from 0 with rolling digits once the screen has appeared. */
+function CountUp({ to }: { to: number }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setV(to), 300);
+    return () => clearTimeout(t);
+  }, [to]);
+  return <RollingNumber value={v} />;
 }

@@ -25,7 +25,7 @@ export function Overview({ did }: { did: number }) {
       </div>
       <p>
         {total > 0 ? (
-          <button className="primary big" autoFocus onClick={() => go({ name: "study", did })}>
+          <button className="primary big hero-cta" autoFocus onClick={() => go({ name: "study", did })}>
             Study Now
           </button>
         ) : (

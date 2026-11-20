@@ -13,7 +13,7 @@ function Bars({ values, labels, title }: { values: number[]; labels?: string[]; 
       </h3>
       <div className="bars">
         {values.map((v, i) => (
-          <div key={i} style={{ height: `${(v / max) * 100}%` }} title={`${labels?.[i] ?? i}: ${v}`} />
+          <div key={i} style={{ height: `${(v / max) * 100}%`, ["--i" as string]: Math.min(i, 60) }} title={`${labels?.[i] ?? i}: ${v}`} />
         ))}
       </div>
       {labels && (
