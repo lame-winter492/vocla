@@ -2,14 +2,14 @@ import { useEffect, useRef } from "react";
 
 const BASE_CSS = `
 :host { display: block; }
-.card { padding: 20px; min-height: 100%; }
+.card { padding: 28px 24px; min-height: 100%; }
 .cloze { font-weight: bold; color: blue; }
 #typeans { font-family: monospace; font-size: inherit; }
 input#typeans { width: 90%; max-width: 500px; padding: 4px; }
 .typeGood { background: #afa; } .typeBad { background: #faa; } .typeMissed { background: #ccc; }
 .tts { border: 1px solid #aaa; border-radius: 50%; background: none; width: 28px; height: 28px; cursor: pointer; font-size: 12px; }
 img { max-width: 100%; }
-.card.nightMode { background-color: #1f2124; color: #e4e6e9; }
+.card.nightMode { background-color: #191c21; color: #e5e7ea; }
 .nightMode .cloze { color: #7fb2ff; }
 `;
 

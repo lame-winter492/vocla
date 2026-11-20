@@ -97,7 +97,7 @@ export function ImportPage() {
   };
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <h2>Import</h2>
       <p className="muted">
         Supported: plain text (.txt, .csv, .tsv — one note per line, fields separated by tab/comma/semicolon), Vocla deck packages (.json) and
@@ -193,7 +193,9 @@ export function ImportPage() {
             </tbody>
           </table>
           <div className="row" style={{ marginTop: 12 }}>
-            <button onClick={doImport}>Import</button>
+            <button className="primary" onClick={doImport}>
+              Import
+            </button>
             <button onClick={() => setText(null)}>Cancel</button>
           </div>
         </div>
@@ -228,7 +230,7 @@ export function ExportPage({ did: initial }: { did?: ID }) {
   };
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <h2>Export</h2>
       <label>
         Format{" "}
@@ -275,7 +277,7 @@ export function ExportPage({ did: initial }: { did?: ID }) {
           </label>
         </>
       )}
-      <button onClick={run} style={{ marginTop: 12 }}>
+      <button className="primary" onClick={run} style={{ marginTop: 12 }}>
         Export
       </button>
     </div>

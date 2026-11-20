@@ -13,27 +13,19 @@ export function Overview({ did }: { did: number }) {
   const nextLearn = col.nextLearnDue(did);
 
   return (
-    <div className="page" style={{ textAlign: "center" }}>
+    <div className="page narrow overview">
       <h2>{deck.name}</h2>
-      <table style={{ margin: "0 auto" }}>
-        <tbody>
-          <tr>
-            <td>New:</td>
-            <td className="c-new">{c.newCount}</td>
-          </tr>
-          <tr>
-            <td>Learning:</td>
-            <td className="c-learn">{c.learnCount}</td>
-          </tr>
-          <tr>
-            <td>To Review:</td>
-            <td className="c-rev">{c.reviewCount}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div className="counts">
+        <span className="muted">New</span>
+        <span className="num c-new">{c.newCount}</span>
+        <span className="muted">Learning</span>
+        <span className="num c-learn">{c.learnCount}</span>
+        <span className="muted">To review</span>
+        <span className="num c-rev">{c.reviewCount}</span>
+      </div>
       <p>
         {total > 0 ? (
-          <button autoFocus onClick={() => go({ name: "study", did })} style={{ padding: "6px 24px" }}>
+          <button className="primary big" autoFocus onClick={() => go({ name: "study", did })}>
             Study Now
           </button>
         ) : (

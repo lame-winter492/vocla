@@ -23,32 +23,35 @@ export function DeckList() {
       const d = n.deck;
       rows.push(
         <tr key={d.id}>
-          <td style={{ paddingLeft: 8 + n.depth * 18 }}>
+          <td style={{ paddingLeft: 12 + n.depth * 20 }}>
             {n.children.length > 0 ? (
-              <a onClick={() => store.mutate(() => (d.collapsed = !d.collapsed))} style={{ display: "inline-block", width: 14 }}>
-                {d.collapsed ? "+" : "−"}
+              <a className="twisty" onClick={() => store.mutate(() => (d.collapsed = !d.collapsed))} aria-label={d.collapsed ? "Expand" : "Collapse"}>
+                {d.collapsed ? "▸" : "▾"}
               </a>
             ) : (
-              <span style={{ display: "inline-block", width: 14 }} />
+              <span className="twisty" />
             )}
             <a
               onClick={() => {
                 store.mutate((c) => (c.d.prefs.currentDeck = d.id));
                 go({ name: "overview", did: d.id });
               }}
-              style={{ fontStyle: d.dyn ? "italic" : undefined, fontWeight: col.d.prefs.currentDeck === d.id ? "bold" : undefined }}
+              className={`deck-name${col.d.prefs.currentDeck === d.id ? " current" : ""}`}
+              style={{ fontStyle: d.dyn ? "italic" : undefined }}
             >
               {n.name}
             </a>
           </td>
-          <td className="num c-new">{n.counts.newCount || <span className="muted">0</span>}</td>
-          <td className="num c-learn">{n.counts.learnCount || <span className="muted">0</span>}</td>
-          <td className="num c-rev">{n.counts.reviewCount || <span className="muted">0</span>}</td>
-          <td style={{ position: "relative", width: 40 }}>
-            <button onClick={() => setMenu(menu === d.id ? null : d.id)}>⚙</button>
+          <td className="num c-new">{n.counts.newCount || <span className="zero">0</span>}</td>
+          <td className="num c-learn">{n.counts.learnCount || <span className="zero">0</span>}</td>
+          <td className="num c-rev">{n.counts.reviewCount || <span className="zero">0</span>}</td>
+          <td style={{ position: "relative", width: 48, textAlign: "right" }}>
+            <button className="ghost" aria-label="Deck actions" onClick={() => setMenu(menu === d.id ? null : d.id)}>
+              ⋯
+            </button>
             {menu === d.id && (
               <div
-                style={{ position: "absolute", right: 0, top: 28, background: "var(--bg)", border: "1px solid var(--line)", zIndex: 10, display: "flex", flexDirection: "column" }}
+                className="menu"
                 onMouseLeave={() => setMenu(null)}
               >
                 <button
@@ -72,6 +75,7 @@ export function DeckList() {
                 )}
                 <button onClick={() => go({ name: "export", did: d.id })}>Export</button>
                 <button
+                  className="danger"
                   onClick={async () => {
                     const n = col.deckAndChildren(d.id).length;
                     const cards = Object.values(col.d.cards).filter((c) => col.deckAndChildren(d.id).some((x) => x.id === c.did)).length;
@@ -100,7 +104,8 @@ export function DeckList() {
 
   return (
     <div className="page">
-      <table className="decks" style={{ width: "100%" }}>
+      <h2>Decks</h2>
+      <table className="decks">
         <thead>
           <tr>
             <th>Deck</th>
@@ -112,11 +117,13 @@ export function DeckList() {
         </thead>
         <tbody>{rows}</tbody>
       </table>
-      <p className="muted">
+      <p className="muted small">
         Studied {studied.length} cards in {Math.round(secs / 60)} minutes today.
       </p>
       <div className="row">
-        <button onClick={createDeck}>Create Deck</button>
+        <button className="primary" onClick={createDeck}>
+          Create Deck
+        </button>
         <button onClick={() => go({ name: "filtered" })}>Create Filtered Deck</button>
         <button onClick={() => go({ name: "import" })}>Import File</button>
       </div>

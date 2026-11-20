@@ -61,7 +61,7 @@ export function CustomStudy({ did }: { did: ID }) {
   );
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <h2>Custom Study — {deck.name}</h2>
       {opt("newLimit", "Increase today's new card limit")}
       {opt("revLimit", "Increase today's review card limit")}
@@ -110,7 +110,9 @@ export function CustomStudy({ did }: { did: ID }) {
       </div>
       <p className="muted small">{col.counts(did).newCount} new cards available today in this deck.</p>
       <div className="row">
-        <button onClick={run}>OK</button>
+        <button className="primary" onClick={run}>
+          OK
+        </button>
         <button onClick={() => go({ name: "overview", did })}>Cancel</button>
       </div>
     </div>

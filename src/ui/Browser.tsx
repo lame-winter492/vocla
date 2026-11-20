@@ -284,7 +284,7 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
       </div>
 
       <div>
-        <div className="row" style={{ marginBottom: 6 }}>
+        <div className="row" style={{ marginBottom: 10 }}>
           <input
             style={{ flex: 1, minWidth: 200 }}
             value={input}
@@ -292,7 +292,9 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
             onKeyDown={(e) => e.key === "Enter" && search(input)}
             placeholder="Search (Anki syntax)"
           />
-          <button onClick={() => search(input)}>Search</button>
+          <button className="primary" onClick={() => search(input)}>
+            Search
+          </button>
           <button
             onClick={async () => {
               const name = await askText("Name for saved search:");
@@ -316,7 +318,7 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
           </span>
         </div>
 
-        <div className="row small" style={{ marginBottom: 6, gap: 4 }}>
+        <div className="row actions">
           <button onClick={() => setSelected(new Set(rows))}>Select All</button>
           <button onClick={() => setModal("deck")}>Change Deck</button>
           <button
@@ -384,6 +386,7 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
             Preview
           </button>
           <button
+            className="danger"
             onClick={async () => {
               const nids = selNoteIds();
               if (nids.length && await askConfirm(`Delete ${nids.length} note(s) and their cards?`)) {
@@ -430,9 +433,11 @@ export function Browser({ initialQuery }: { initialQuery?: string }) {
         </div>
 
         {draft && col.d.notetypes[draft.ntid] && (
-          <div style={{ marginTop: 12 }}>
+          <div className="panel editpane">
             <NoteEditor note={draft} nt={col.d.notetypes[draft.ntid]} onChange={editDraft} allTags={col.allTags()} />
-            <button onClick={saveDraft}>Save</button>
+            <button className="primary" onClick={saveDraft}>
+              Save
+            </button>
           </div>
         )}
       </div>

@@ -114,17 +114,20 @@ export function App() {
 
   return (
     <Nav.Provider value={{ go, toast, route }}>
-      <div className="topbar">
+      <header className="appbar">
+        <span className="brand">Vocla</span>
+        <nav className="tabs">
         {tab("Decks", { name: "decks" }, ["decks", "overview", "study", "options", "filtered", "custom"])}
         {tab("Courses", { name: "courses" }, ["courses", "course", "lesson"])}
         {tab("Add", { name: "add" }, ["add"])}
         {tab("Browse", { name: "browse" }, ["browse"])}
         {tab("Stats", { name: "stats" }, ["stats"])}
         {tab("Note Types", { name: "notetypes" }, ["notetypes"])}
-        <span className="spacer" />
         {tab("Import", { name: "import" }, ["import"])}
         {tab("Export", { name: "export" }, ["export"])}
         {tab("Preferences", { name: "prefs" }, ["prefs"])}
+        </nav>
+        <div className="utility">
         <button
           title="Undo (Ctrl+Z)"
           disabled={!store.undoLabel()}
@@ -135,7 +138,8 @@ export function App() {
         >
           Undo
         </button>
-      </div>
+        </div>
+      </header>
       {page}
       {msg && <div className="toast">{msg}</div>}
       <DialogHost />

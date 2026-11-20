@@ -46,7 +46,7 @@ export function NoteTypes() {
           ))}
         </select>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <button onClick={add}>Add</button>
+          <button className="primary" onClick={add}>Add</button>
           <button
             disabled={!nt}
             onClick={async () => {
@@ -185,7 +185,7 @@ function NoteTypeEditor({ nt: orig, mode, onDone }: { nt: NoteType; mode: "field
           <input type="radio" checked={nt.sortField === fsel} onChange={() => upd((n) => (n.sortField = fsel))} /> Sort by this field in the browser
         </label>
         <div className="row">
-          <button onClick={save}>Save</button>
+          <button className="primary" onClick={save}>Save</button>
           <button onClick={onDone}>Cancel</button>
         </div>
       </div>
@@ -285,7 +285,7 @@ function NoteTypeEditor({ nt: orig, mode, onDone }: { nt: NoteType; mode: "field
         </div>
       </div>
       <div className="row" style={{ marginTop: 8 }}>
-        <button onClick={save}>Save</button>
+        <button className="primary" onClick={save}>Save</button>
         <button onClick={onDone}>Cancel</button>
       </div>
     </div>

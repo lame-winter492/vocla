@@ -42,47 +42,57 @@ export function Courses() {
   };
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <h2>Courses</h2>
       <p className="muted">
-        {p.xp} XP · {streak(p.days, col.today())} day streak
+        <span className="xp">{p.xp} XP</span> · <span className="xp">{streak(p.days, col.today())}</span> day streak
       </p>
       {courses.length === 0 && <p>No courses yet. Import one below.</p>}
-      <table style={{ width: "100%" }}>
-        <tbody>
-          {courses.map((c) => {
-            const lessons = allLessons(c);
-            const done = lessons.filter((l) => p.lessons[c.id]?.[l.id]).length;
-            return (
-              <tr key={c.id}>
-                <td>
-                  <a onClick={() => go({ name: "course", id: c.id })}>
-                    <b>{c.title}</b>
-                  </a>
-                  {c.description && <div className="small muted">{c.description}</div>}
-                </td>
-                <td className="muted">
-                  {done}/{lessons.length} lessons
-                </td>
-                <td style={{ textAlign: "right" }}>
-                  <button onClick={() => download(`${c.id}.course.json`, JSON.stringify(c, null, 2))}>Export</button>{" "}
-                  <button
-                    onClick={async () => {
-                      if (await askConfirm(`Delete course "${c.title}"? Your progress in it is removed too.`))
-                        store.update("Delete Course", (cc) => {
-                          delete cc.d.courses[c.id];
-                          delete cc.d.courseProgress.lessons[c.id];
-                        });
-                    }}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      <div className="course-list">
+        {courses.map((c) => {
+          const lessons = allLessons(c);
+          const done = lessons.filter((l) => p.lessons[c.id]?.[l.id]).length;
+          return (
+            <div key={c.id} className="panel course-card">
+              <div className="grow stack">
+                <a onClick={() => go({ name: "course", id: c.id })} className="deck-name" style={{ fontSize: "var(--fs-lg)" }}>
+                  {c.title}
+                </a>
+                {c.description && <div className="small muted">{c.description}</div>}
+                <div className="row small muted">
+                  <div className="meter" style={{ flex: 1, maxWidth: 240 }}>
+                    <div style={{ width: `${lessons.length ? (done / lessons.length) * 100 : 0}%` }} />
+                  </div>
+                  <span className="mono">
+                    {done}/{lessons.length}
+                  </span>{" "}
+                  lessons
+                </div>
+              </div>
+              <div className="row">
+                <button className="primary" onClick={() => go({ name: "course", id: c.id })}>
+                  {done ? "Continue" : "Start"}
+                </button>
+                <button className="ghost" onClick={() => download(`${c.id}.course.json`, JSON.stringify(c, null, 2))}>
+                  Export
+                </button>
+                <button
+                  className="ghost danger"
+                  onClick={async () => {
+                    if (await askConfirm(`Delete course "${c.title}"? Your progress in it is removed too.`))
+                      store.update("Delete Course", (cc) => {
+                        delete cc.d.courses[c.id];
+                        delete cc.d.courseProgress.lessons[c.id];
+                      });
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
       <h3>Import course</h3>
       <input type="file" accept=".json" onChange={(e) => e.target.files?.[0] && importFile(e.target.files[0])} />
       <p className="small muted">A JSON file with one course or an array of courses. The format is described in docs/course-format.md.</p>
@@ -101,40 +111,51 @@ export function CourseView({ id }: { id: string }) {
   const prog = col.d.courseProgress;
 
   return (
-    <div className="page">
-      <div className="row">
+    <div className="page narrow">
+      <div className="row small">
         <a onClick={() => go({ name: "courses" })}>← Courses</a>
       </div>
       <h2>{course.title}</h2>
       {course.units.map((u, ui) => (
-        <div key={u.id} style={{ marginBottom: 16 }}>
+        <section key={u.id} style={{ marginBottom: 20 }}>
           <h3>
             Unit {ui + 1}: {u.title}
           </h3>
           {u.description && <p className="muted small">{u.description}</p>}
-          <table>
+          <table className="panel lessons">
             <tbody>
               {u.lessons.map((l) => {
                 const res = prog.lessons[course.id]?.[l.id];
                 const open = isUnlocked(course, prog, l.id);
                 return (
                   <tr key={l.id}>
-                    <td style={{ width: 20 }}>{res ? "✓" : open ? "○" : "🔒"}</td>
-                    <td style={{ minWidth: 200 }}>{l.title}</td>
-                    <td className="muted small">{res ? `best ${Math.round(res.best * 100)}% · ${res.times}×` : ""}</td>
-                    <td>
-                      <button disabled={!open} onClick={() => go({ name: "lesson", courseId: course.id, lessonId: l.id })}>
+                    <td className={`lesson-state${res ? " done" : open ? "" : " locked"}`}>{res ? "✓" : open ? "○" : "—"}</td>
+                    <td style={{ width: "100%" }} className={open ? "" : "muted"}>
+                      {l.title}
+                      {!open && <span className="small"> · locked</span>}
+                    </td>
+                    <td className="muted small mono" style={{ whiteSpace: "nowrap" }}>
+                      {res ? `${Math.round(res.best * 100)}% · ${res.times}×` : ""}
+                    </td>
+                    <td style={{ whiteSpace: "nowrap", textAlign: "right" }}>
+                      {l.tips && (
+                        <button className="ghost" onClick={() => setTips(tips === l.id ? null : l.id)}>
+                          Tips
+                        </button>
+                      )}{" "}
+                      <button className={open && !res ? "primary" : ""} disabled={!open} onClick={() => go({ name: "lesson", courseId: course.id, lessonId: l.id })}>
                         {res ? "Practice" : "Start"}
-                      </button>{" "}
-                      {l.tips && <button onClick={() => setTips(tips === l.id ? null : l.id)}>Tips</button>}
+                      </button>
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          {u.lessons.map((l) => tips === l.id && <div key={l.id} className="small" style={{ padding: 8, border: "1px solid var(--line)" }} dangerouslySetInnerHTML={{ __html: l.tips! }} />)}
-        </div>
+          {u.lessons.map(
+            (l) => tips === l.id && <div key={l.id} className="panel" style={{ padding: "12px 16px", marginTop: 8 }} dangerouslySetInnerHTML={{ __html: l.tips! }} />,
+          )}
+        </section>
       ))}
       <button
         onClick={() => {
@@ -198,13 +219,13 @@ export function LessonPlayer({ courseId, lessonId }: { courseId: string; lessonI
 
   if (done) {
     return (
-      <div className="page" style={{ textAlign: "center" }}>
+      <div className="page narrow overview">
         <h2>Lesson complete!</h2>
-        <p>
+        <p className="xp" style={{ fontSize: "var(--fs-lg)" }}>
           +{done.xp} XP · {Math.round(done.accuracy * 100)}% accuracy
         </p>
         <div className="row" style={{ justifyContent: "center" }}>
-          <button autoFocus onClick={() => go({ name: "course", id: courseId })}>
+          <button className="primary" autoFocus onClick={() => go({ name: "course", id: courseId })}>
             Continue
           </button>
           {lesson.vocab?.length ? (
@@ -225,11 +246,17 @@ export function LessonPlayer({ courseId, lessonId }: { courseId: string; lessonI
   if (!cur) return <div className="page">This lesson has no exercises.</div>;
 
   return (
-    <div className="page" style={{ maxWidth: 640 }}>
-      <div className="row" style={{ marginBottom: 16 }}>
-        <a onClick={async () => await askConfirm("Quit this lesson? Progress in it will be lost.") && go({ name: "course", id: courseId })}>✕</a>
-        <div style={{ flex: 1, height: 8, background: "var(--soft)" }}>
-          <div style={{ width: `${(finishedCount / Math.max(1, total)) * 100}%`, height: "100%", background: "var(--accent)" }} />
+    <div className="page narrow">
+      <div className="lesson-head">
+        <button
+          className="ghost"
+          aria-label="Quit lesson"
+          onClick={async () => (await askConfirm("Quit this lesson? Progress in it will be lost.")) && go({ name: "course", id: courseId })}
+        >
+          ✕
+        </button>
+        <div className="meter">
+          <div style={{ width: `${(finishedCount / Math.max(1, total)) * 100}%` }} />
         </div>
       </div>
       {cur.retry && <div className="small muted">Previous mistake</div>}
@@ -256,11 +283,13 @@ function Feedback({ fb, onContinue }: { fb: { result: Result; correct: string };
   }, []);
   const ok = fb.result !== "wrong";
   return (
-    <div style={{ marginTop: 16, padding: 12, background: ok ? "var(--good-bg)" : "var(--bad-bg)" }}>
-      <b>{fb.result === "correct" ? "Correct!" : fb.result === "accent" ? "Almost — watch the accents:" : "Correct answer:"}</b>
-      {fb.result !== "correct" && <div>{fb.correct}</div>}
-      <div style={{ marginTop: 8 }}>
-        <button onClick={onContinue}>Continue (Enter)</button>
+    <div className={`feedback ${ok ? "good" : "bad"}`}>
+      <b>{fb.result === "correct" ? "Correct!" : fb.result === "accent" ? "Almost. Watch the accents:" : "Correct answer:"}</b>
+      {fb.result !== "correct" && fb.correct && <div>{fb.correct}</div>}
+      <div className="row">
+        <button className="primary" onClick={onContinue}>
+          Continue <span className="kbd" style={{ color: "inherit", opacity: 0.75 }}>Enter</span>
+        </button>
       </div>
     </div>
   );
@@ -310,7 +339,7 @@ function TextAnswer({ answers, locked, onSubmit, placeholder }: { answers: strin
           }
         }}
       />
-      <button disabled={locked || !v.trim()} onClick={check}>
+      <button className="primary" disabled={locked || !v.trim()} onClick={check}>
         Check
       </button>
     </div>
@@ -342,22 +371,29 @@ function ChoiceEx({ ex, lang, locked, onSubmit }: ExProps & { ex: Extract<Exerci
       <h3>
         Select the correct meaning{" "}
         {ex.speak && (
-          <button className="small" onClick={() => speak(ex.prompt, lang)}>
+          <button className="ghost" aria-label="Play audio" onClick={() => speak(ex.prompt, lang)}>
             ▶
           </button>
         )}
       </h3>
-      <p style={{ fontSize: 22 }}>{ex.prompt}</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <p className="prompt-text">{ex.prompt}</p>
+      <div className="options">
         {ex.choices.map((c, i) => (
-          <button key={i} disabled={locked} onClick={() => setSel(i)} style={{ textAlign: "left", fontWeight: sel === i ? "bold" : undefined, background: sel === i ? "var(--sel)" : undefined }}>
-            {i + 1}. {c}
+          <button
+            key={i}
+            disabled={locked}
+            className={`option${locked && ex.choices[i] === correct ? " correct" : locked && sel === i ? " wrong" : sel === i ? " selected" : ""}`}
+            onClick={() => setSel(i)}
+          >
+            <span className="kbd">{i + 1}</span>&nbsp;&nbsp;{c}
           </button>
         ))}
       </div>
-      <button style={{ marginTop: 12 }} disabled={locked || sel === null} onClick={check}>
-        Check
-      </button>
+      {!locked && (
+        <button className="primary" style={{ marginTop: 14 }} disabled={sel === null} onClick={check}>
+          Check
+        </button>
+      )}
     </div>
   );
 }
@@ -368,23 +404,25 @@ function WordBank({ words, locked, onSubmit, answers }: { words: string[]; locke
   const check = () => picked.length && onSubmit(checkAnswer(picked.map((i) => tiles[i]).join(" "), answers), answers[0]);
   return (
     <div>
-      <div style={{ minHeight: 40, borderBottom: "1px solid var(--line)", padding: 4 }} className="row">
+      <div className="row answer-line">
         {picked.map((i, j) => (
-          <button key={j} disabled={locked} onClick={() => setPicked(picked.filter((_, k) => k !== j))}>
+          <button key={j} className="tile" disabled={locked} onClick={() => setPicked(picked.filter((_, k) => k !== j))}>
             {tiles[i]}
           </button>
         ))}
       </div>
       <div className="row" style={{ marginTop: 8 }}>
         {tiles.map((t, i) => (
-          <button key={i} disabled={locked || picked.includes(i)} onClick={() => setPicked([...picked, i])} style={{ opacity: picked.includes(i) ? 0.3 : 1 }}>
+          <button key={i} className="tile" disabled={locked || picked.includes(i)} onClick={() => setPicked([...picked, i])} style={{ visibility: picked.includes(i) ? "hidden" : undefined }}>
             {t}
           </button>
         ))}
       </div>
-      <button style={{ marginTop: 12 }} disabled={locked || !picked.length} onClick={check}>
-        Check
-      </button>
+      {!locked && (
+        <button className="primary" style={{ marginTop: 14 }} disabled={!picked.length} onClick={check}>
+          Check
+        </button>
+      )}
     </div>
   );
 }
@@ -396,7 +434,7 @@ function TranslateEx({ ex, lang, locked, onSubmit }: ExProps & { ex: Extract<Exe
   return (
     <div>
       <h3>Translate this sentence</h3>
-      <p style={{ fontSize: 22 }}>{ex.prompt}</p>
+      <p className="prompt-text">{ex.prompt}</p>
       {ex.wordBank?.length ? (
         <WordBank words={ex.wordBank} answers={ex.answers} locked={locked} onSubmit={onSubmit} />
       ) : (
@@ -412,7 +450,7 @@ function ListenEx({ ex, lang, locked, onSubmit }: ExProps & { ex: Extract<Exerci
     <div>
       <h3>Type what you hear</h3>
       <p>
-        <button onClick={() => speak(ex.text, lang)} style={{ fontSize: 20 }}>
+        <button className="big" onClick={() => speak(ex.text, lang)}>
           ▶ Play
         </button>
       </p>
@@ -427,7 +465,7 @@ function FillEx({ ex, locked, onSubmit }: ExProps & { ex: Extract<Exercise, { ty
     <div>
       <h3>Fill in the blank</h3>
       {ex.translation && <p className="muted">{ex.translation}</p>}
-      <p style={{ fontSize: 22 }}>
+      <p className="prompt-text">
         {before}
         <u>&nbsp;&nbsp;?&nbsp;&nbsp;</u>
         {after}
@@ -435,7 +473,7 @@ function FillEx({ ex, locked, onSubmit }: ExProps & { ex: Extract<Exercise, { ty
       {ex.choices?.length ? (
         <div className="row">
           {ex.choices.map((c) => (
-            <button key={c} disabled={locked} onClick={() => onSubmit(checkAnswer(c, ex.answers), ex.answers[0])}>
+            <button key={c} className="tile" disabled={locked} onClick={() => onSubmit(checkAnswer(c, ex.answers), ex.answers[0])}>
               {c}
             </button>
           ))}
@@ -479,7 +517,7 @@ function MatchEx({ ex, lang, onSubmit }: ExProps & { ex: Extract<Exercise, { typ
       <button
         key={item.i}
         disabled={done}
-        style={{ opacity: done ? 0.3 : 1, fontWeight: sel === item.i ? "bold" : undefined, background: sel === item.i ? (wrong ? "var(--bad-bg)" : "var(--sel)") : undefined }}
+        className={`option${done ? " matched" : ""}${sel === item.i ? (wrong ? " wrong" : " selected") : ""}`}
         onClick={() => {
           if (side === "l") {
             speak(item.t, lang);
@@ -495,9 +533,9 @@ function MatchEx({ ex, lang, onSubmit }: ExProps & { ex: Extract<Exercise, { typ
   return (
     <div>
       <h3>Tap the matching pairs</h3>
-      <div className="grid2">
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{left.map((x) => btn("l", x))}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>{right.map((x) => btn("r", x))}</div>
+      <div className="grid2" style={{ gridTemplateColumns: "1fr 1fr" }}>
+        <div className="options">{left.map((x) => btn("l", x))}</div>
+        <div className="options">{right.map((x) => btn("r", x))}</div>
       </div>
       {mistakes > 0 && <p className="small muted">{mistakes} mistake{mistakes > 1 ? "s" : ""}</p>}
     </div>

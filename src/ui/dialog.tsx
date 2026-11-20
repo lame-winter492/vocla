@@ -93,7 +93,7 @@ function DialogView({ req }: { req: Req }) {
               Cancel
             </button>
           )}
-          <button type="submit" ref={okRef}>
+          <button type="submit" className="primary" ref={okRef}>
             OK
           </button>
         </div>

@@ -26,7 +26,7 @@ export function DeckOptions({ did }: { did: ID }) {
   const [conf, setConf] = useState<DeckConfig>(() => structuredClone(col.confFor(did)));
   const [newSteps, setNewSteps] = useState(fmtSteps(conf.new.steps));
   const [lapseSteps, setLapseSteps] = useState(fmtSteps(conf.lapse.steps));
-  if (!deck) return <div className="page">Deck not found.</div>;
+  if (!deck) return <div className="page narrow">Deck not found.</div>;
 
   const usedBy = Object.values(col.d.decks).filter((d) => d.confId === conf.id).length;
 
@@ -63,7 +63,7 @@ export function DeckOptions({ did }: { did: ID }) {
     });
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <h2>Options for {deck.name}</h2>
       <div className="row" style={{ marginBottom: 12 }}>
         Preset:
@@ -193,7 +193,9 @@ export function DeckOptions({ did }: { did: ID }) {
       </fieldset>
 
       <div className="row">
-        <button onClick={() => save(false)}>Save</button>
+        <button className="primary" onClick={() => save(false)}>
+          Save
+        </button>
         <button onClick={() => save(true)}>Save to All Subdecks</button>
         <button onClick={() => go({ name: "overview", did })}>Cancel</button>
       </div>

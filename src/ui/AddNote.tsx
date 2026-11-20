@@ -48,7 +48,7 @@ export function AddNote({ did: initialDid }: { did?: ID }) {
 
   return (
     <div
-      className="page"
+      className="page narrow"
       onKeyDown={(e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
           e.preventDefault();
@@ -84,7 +84,7 @@ export function AddNote({ did: initialDid }: { did?: ID }) {
       </div>
       <NoteEditor key={ntid} note={note} nt={nt} onChange={setNote} dupe={dupe} autoFocus allTags={col.allTags()} />
       <div className="row">
-        <button onClick={add} title="Ctrl+Enter">
+        <button className="primary" onClick={add} title="Ctrl+Enter">
           Add
         </button>
         <button onClick={() => go({ name: "browse", query: "added:1" })}>History ({history.length})</button>

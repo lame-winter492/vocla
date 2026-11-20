@@ -9,7 +9,7 @@ export function Prefs() {
   const set = (fn: () => void) => store.update("Preferences", fn);
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <h2>Preferences</h2>
       <fieldset>
         <legend>Scheduling</legend>

@@ -82,7 +82,7 @@ export function FilteredDeck({ did, search, search2, resched }: { did?: ID; sear
   );
 
   return (
-    <div className="page">
+    <div className="page narrow">
       <h2>{existing ? "Filtered Deck Options" : "Create Filtered Deck"}</h2>
       <label>
         Name <input value={name} onChange={(e) => setName(e.target.value)} />
@@ -118,7 +118,9 @@ export function FilteredDeck({ did, search, search2, resched }: { did?: ID; sear
         )}
       </fieldset>
       <div className="row">
-        <button onClick={save}>{existing ? "Rebuild" : "Build"}</button>
+        <button className="primary" onClick={save}>
+          {existing ? "Rebuild" : "Build"}
+        </button>
         <button onClick={() => go(existing ? { name: "overview", did: existing.id } : { name: "decks" })}>Cancel</button>
       </div>
     </div>
