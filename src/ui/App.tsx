@@ -16,8 +16,29 @@ import { Prefs } from "./Prefs";
 import { Stats } from "./Stats";
 import { Study } from "./Study";
 
+/** Which design to show: the saved preference, else a page-level default (the iOS preview sets one), else Focus. */
+export function currentDesign(pref?: "focus" | "glass"): "focus" | "glass" {
+  return pref ?? ((window as unknown as { __voclaDefaultDesign?: "focus" | "glass" }).__voclaDefaultDesign ?? "focus");
+}
+
 export function App() {
-  useCol();
+  const col = useCol();
+  document.documentElement.dataset.design = currentDesign(col.d.prefs.design);
+
+  // Liquid Glass: the tab bar shrinks while scrolling down and comes back when scrolling up (iOS 26)
+  useEffect(() => {
+    let last = 0;
+    const onScroll = (e: Event) => {
+      const t = e.target as HTMLElement | Document;
+      const top = t instanceof Document ? window.scrollY : t.scrollTop;
+      const root = document.documentElement;
+      if (top > 80 && top - last > 4) root.classList.add("tabs-min");
+      else if (top - last < -4 || top <= 80) root.classList.remove("tabs-min");
+      last = top;
+    };
+    document.addEventListener("scroll", onScroll, true);
+    return () => document.removeEventListener("scroll", onScroll, true);
+  }, []);
   const [route, setRoute] = useState<Route>({ name: "decks" });
   const [msg, setMsg] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -28,6 +49,12 @@ export function App() {
     timer.current = setTimeout(() => setMsg(null), 2500);
   }, []);
   const go = useCallback((r: Route) => setRoute(r), []);
+
+  // a new screen starts at the top with the tab bar expanded
+  useEffect(() => {
+    document.documentElement.classList.remove("tabs-min");
+    document.querySelector(".main")?.scrollTo({ top: 0 });
+  }, [route]);
 
   // global shortcuts
   useEffect(() => {
@@ -131,7 +158,19 @@ export function App() {
         <main className="main focus">{page}</main>
       ) : (
         <div className="shell">
-          <nav className="rail" aria-label="Sections">
+          <nav
+            className="rail"
+            aria-label="Sections"
+            onClickCapture={(e) => {
+              // tapping the minimized tab bar expands it first (iOS 26)
+              const root = document.documentElement;
+              if (root.classList.contains("tabs-min")) {
+                root.classList.remove("tabs-min");
+                e.stopPropagation();
+                e.preventDefault();
+              }
+            }}
+          >
             <div className="logo" aria-hidden="true" />
             {railItem("Today", ICONS.today, { name: "decks" }, ["decks", "overview", "options", "filtered", "custom"])}
             {railItem("Courses", ICONS.courses, { name: "courses" }, ["courses", "course"])}

@@ -1,0 +1,244 @@
+/* ==========================================================================
+   Liquid Glass: Vocla as a stock iOS 26 app.
+   Plain grouped content underneath; controls float above it as a separate layer of translucent glass:
+   a capsule tab bar that shrinks on scroll, circular toolbar buttons, inset sheets, concentric corners.
+   Follows light/dark mode. Glass = blur + saturation + a specular rim (inset highlights) + soft shadow.
+   (True refraction needs SVG backdrop filters that only Chromium supports, so it's left out.)
+   Everything is scoped to html[data-design="glass"]; the Focus design is untouched.
+   ========================================================================== */
+
+html[data-design="glass"] {
+  /* iOS system colors, light */
+  --bg: #f2f2f7;                    /* systemGroupedBackground */
+  --surface: #ffffff;               /* secondarySystemGroupedBackground */
+  --raised: #ffffff;
+  --hover: rgba(120, 120, 128, 0.12);
+  --line: rgba(60, 60, 67, 0.18);   /* separator */
+  --line-strong: rgba(60, 60, 67, 0.29);
+  --fg: #000000;                    /* label */
+  --fg-2: rgba(60, 60, 67, 0.85);
+  --muted: rgba(60, 60, 67, 0.6);   /* secondaryLabel */
+  --faint: rgba(60, 60, 67, 0.3);   /* tertiaryLabel */
+  --accent: #007aff;                /* systemBlue */
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(0, 122, 255, 0.14);
+  --again: #ff3b30;
+  --hard: #ff9500;
+  --good: #34c759;
+  --easy: #007aff;
+  --again-soft: rgba(255, 59, 48, 0.12);
+  --good-soft: rgba(52, 199, 89, 0.14);
+  --new: #007aff;
+  --learn: #ff3b30;
+  --rev: #34c759;
+  --sel: rgba(0, 122, 255, 0.12);
+  --overlay: rgba(0, 0, 0, 0.2);
+  --shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+  --flag1: #ffd3d0; --flag2: #ffe4c2; --flag3: #cff2d8; --flag4: #cfe4ff;
+  --flag5: #ffd1e3; --flag6: #c7f0ee; --flag7: #e8d6ff;
+
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-strong: rgba(255, 255, 255, 0.82);
+  --glass-rim: inset 0 1px 0.5px rgba(255, 255, 255, 0.95), inset 0 -0.5px 0.5px rgba(255, 255, 255, 0.5), inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  --glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.06);
+  --glass-blur: blur(22px) saturate(190%);
+  --pill: rgba(120, 120, 128, 0.16);
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro", system-ui, sans-serif;
+  --font-rounded: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 12px;
+  --radius-lg: 22px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  html[data-design="glass"]:not([data-theme="light"]) {
+    --bg: #000000; --surface: #1c1c1e; --raised: #2c2c2e; --hover: rgba(120, 120, 128, 0.24);
+    --line: rgba(84, 84, 88, 0.55); --line-strong: rgba(84, 84, 88, 0.75);
+    --fg: #ffffff; --fg-2: rgba(235, 235, 245, 0.8); --muted: rgba(235, 235, 245, 0.6); --faint: rgba(235, 235, 245, 0.3);
+    --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, 0.22);
+    --again: #ff453a; --hard: #ff9f0a; --good: #30d158; --easy: #0a84ff;
+    --again-soft: rgba(255, 69, 58, 0.2); --good-soft: rgba(48, 209, 88, 0.2);
+    --new: #0a84ff; --learn: #ff453a; --rev: #30d158; --sel: rgba(10, 132, 255, 0.25);
+    --overlay: rgba(0, 0, 0, 0.45); --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    --flag1: #5c2522; --flag2: #5a3d14; --flag3: #1d4a29; --flag4: #173b63; --flag5: #57213a; --flag6: #174845; --flag7: #3f2a5c;
+    --glass-bg: rgba(40, 40, 44, 0.55); --glass-strong: rgba(58, 58, 62, 0.72);
+    --glass-rim: inset 0 1px 0.5px rgba(255, 255, 255, 0.22), inset 0 -0.5px 0.5px rgba(255, 255, 255, 0.08), inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+    --pill: rgba(120, 120, 128, 0.32);
+    color-scheme: dark;
+  }
+}
+html[data-design="glass"][data-theme="dark"] {
+  --bg: #000000; --surface: #1c1c1e; --raised: #2c2c2e; --hover: rgba(120, 120, 128, 0.24);
+  --line: rgba(84, 84, 88, 0.55); --line-strong: rgba(84, 84, 88, 0.75);
+  --fg: #ffffff; --fg-2: rgba(235, 235, 245, 0.8); --muted: rgba(235, 235, 245, 0.6); --faint: rgba(235, 235, 245, 0.3);
+  --accent: #0a84ff; --accent-soft: rgba(10, 132, 255, 0.22);
+  --again: #ff453a; --hard: #ff9f0a; --good: #30d158; --easy: #0a84ff;
+  --again-soft: rgba(255, 69, 58, 0.2); --good-soft: rgba(48, 209, 88, 0.2);
+  --new: #0a84ff; --learn: #ff453a; --rev: #30d158; --sel: rgba(10, 132, 255, 0.25);
+  --overlay: rgba(0, 0, 0, 0.45); --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  --glass-bg: rgba(40, 40, 44, 0.55); --glass-strong: rgba(58, 58, 62, 0.72);
+  --glass-rim: inset 0 1px 0.5px rgba(255, 255, 255, 0.22), inset 0 -0.5px 0.5px rgba(255, 255, 255, 0.08), inset 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --pill: rgba(120, 120, 128, 0.32);
+  color-scheme: dark;
+}
+
+/* ---------- type ---------- */
+html[data-design="glass"] body { font-size: 15px; letter-spacing: -0.01em; }
+html[data-design="glass"] h2 { font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: 0.01em; margin-bottom: 14px; }
+html[data-design="glass"] h3 { font-size: 20px; font-weight: 600; }
+html[data-design="glass"] .large-title { display: block; margin: 0 0 14px; font-family: var(--font-display); font-size: 34px; font-weight: 700; letter-spacing: 0.01em; }
+html[data-design="glass"] th, html[data-design="glass"] .section-label { font-size: 13px; font-weight: 400; color: var(--muted); }
+html[data-design="glass"] .kbd { display: none; } /* no keyboard hints in a touch app */
+
+/* ---------- glass material ---------- */
+html[data-design="glass"] .rail,
+html[data-design="glass"] .menu,
+html[data-design="glass"] .toast,
+html[data-design="glass"] .modal,
+html[data-design="glass"] .review-head button.icon,
+html[data-design="glass"] .topbar button,
+html[data-design="glass"] .answer-buttons button {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-rim), var(--glass-shadow);
+  border: 0;
+}
+
+/* ---------- buttons: capsules ---------- */
+html[data-design="glass"] button { border-radius: 999px; min-height: 40px; padding: 0 18px; font-weight: 500; border: 0; background: var(--pill); color: var(--accent); }
+html[data-design="glass"] button.primary { background: var(--accent); color: #fff; font-weight: 600; box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.35), 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
+html[data-design="glass"] button.big { min-height: 52px; font-size: 17px; border-radius: 999px; }
+html[data-design="glass"] button.ghost { background: transparent; color: var(--accent); }
+html[data-design="glass"] button.danger { color: var(--again); }
+html[data-design="glass"] button.icon { width: 44px; height: 44px; padding: 0; color: var(--fg); }
+html[data-design="glass"] button:active:not(:disabled) { transform: scale(0.94); }
+
+/* ---------- inputs ---------- */
+html[data-design="glass"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+html[data-design="glass"] select,
+html[data-design="glass"] textarea { background: var(--surface); border: 0; border-radius: 12px; min-height: 44px; padding: 10px 14px; box-shadow: inset 0 0 0 0.5px var(--line); }
+html[data-design="glass"] input:focus, html[data-design="glass"] select:focus, html[data-design="glass"] textarea:focus { box-shadow: inset 0 0 0 2px var(--accent); }
+/* checkboxes become iOS switches */
+html[data-design="glass"] input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; position: relative; width: 51px; height: 31px; border-radius: 16px; margin: 0 10px 0 0; vertical-align: middle;
+  background: var(--pill); transition: background-color 0.2s; cursor: pointer; flex: none;
+}
+html[data-design="glass"] input[type="checkbox"]::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16); transition: transform 0.25s cubic-bezier(0.3, 0.7, 0.4, 1.3);
+}
+html[data-design="glass"] input[type="checkbox"]:checked { background: var(--good); }
+html[data-design="glass"] input[type="checkbox"]:checked::after { transform: translateX(20px); }
+
+/* ---------- grouped sections ---------- */
+html[data-design="glass"] fieldset { background: var(--surface); border: 0; border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 26px; }
+html[data-design="glass"] legend { float: left; width: 100%; padding: 0 0 6px; margin: -2px 0 6px; font-size: 13px; font-weight: 400; color: var(--muted); border-bottom: 0.5px solid var(--line); }
+html[data-design="glass"] .panel, html[data-design="glass"] .tablewrap { background: var(--surface); border: 0; border-radius: var(--radius-lg); }
+html[data-design="glass"] .decklist { background: var(--surface); border-radius: var(--radius-lg); border-collapse: separate; border-spacing: 0; overflow: hidden; }
+html[data-design="glass"] .decklist td { border-top: 0.5px solid var(--line); padding: 12px 10px; }
+html[data-design="glass"] .decklist tr:first-child td { border-top: 0; }
+html[data-design="glass"] .decklist .deck-name { font-weight: 400; font-size: 17px; }
+html[data-design="glass"] .decklist .deck-name.current::after { background: var(--accent); }
+html[data-design="glass"] .decklist td.num { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 15px; }
+html[data-design="glass"] .zero { color: var(--faint); }
+html[data-design="glass"] .lessons td { border-bottom: 0.5px solid var(--line); }
+
+/* ---------- Today: large title, summary card ---------- */
+html[data-design="glass"] .today { gap: 28px; padding-top: 8px; }
+html[data-design="glass"] .hero { background: var(--surface); border-radius: 26px; padding: 20px 20px 18px; gap: 10px; }
+html[data-design="glass"] .hero .muted { font-size: 13px; }
+html[data-design="glass"] .hero .big-number b { font-family: var(--font-rounded); font-size: 64px; font-weight: 700; letter-spacing: -0.02em; color: var(--accent); }
+html[data-design="glass"] .hero .big-number span { font-size: 17px; color: var(--fg); font-weight: 500; }
+html[data-design="glass"] .hero .breakdown { font-family: var(--font-ui); font-size: 15px; color: var(--muted); }
+html[data-design="glass"] .hero button.big { align-self: stretch; margin-top: 6px; }
+
+/* ---------- desktop: floating glass sidebar ---------- */
+html[data-design="glass"] .rail {
+  margin: 12px 0 12px max(12px, env(safe-area-inset-left, 0px)); top: 12px; height: calc(100vh - 24px); border-radius: 30px;
+  padding: 16px 8px; border: 0; z-index: 40;
+}
+html[data-design="glass"].native .rail { height: calc(100% - 24px); }
+html[data-design="glass"] .logo { background: var(--accent); border-radius: 9px; }
+html[data-design="glass"] .rail-item { color: var(--muted); border-radius: 20px; min-height: 56px; background: transparent; padding: 8px 0 6px; }
+html[data-design="glass"] .rail-item.on { color: var(--accent); background: var(--pill); }
+html[data-design="glass"] .topbar { padding-top: calc(14px + env(safe-area-inset-top, 0px)); }
+html[data-design="glass"] .topbar button { color: var(--fg); }
+html[data-design="glass"] .searchbtn .label { color: var(--muted); }
+
+/* ---------- menus, sheets, toasts ---------- */
+html[data-design="glass"] .menu { border-radius: 20px; padding: 6px; background: var(--glass-strong); min-width: 220px; }
+html[data-design="glass"] .menu button { background: transparent; color: var(--fg); border-radius: 12px; min-height: 42px; padding: 0 14px; font-weight: 400; justify-content: flex-start; }
+html[data-design="glass"] .menu button.danger { color: var(--again); }
+html[data-design="glass"] .menu hr { border-top: 0.5px solid var(--line); }
+html[data-design="glass"] .modal { background: var(--glass-strong); border-radius: 34px; padding: 26px; }
+html[data-design="glass"] .modal-bg { background: var(--overlay); }
+html[data-design="glass"] .toast { background: var(--glass-strong); color: var(--fg); border-radius: 999px; padding: 12px 20px; font-weight: 500; }
+
+/* ---------- review ---------- */
+html[data-design="glass"] .reviewer { background: var(--bg); }
+html[data-design="glass"] .review-head { gap: 10px; }
+html[data-design="glass"] .review-head button.icon { color: var(--fg); font-size: 17px; }
+html[data-design="glass"] .progress { height: 6px; border-radius: 3px; background: var(--pill); }
+html[data-design="glass"] .progress > div { background: var(--accent); border-radius: 3px; }
+html[data-design="glass"] .review-count { font-family: var(--font-ui); font-variant-numeric: tabular-nums; font-size: 15px; }
+html[data-design="glass"] .cardview { background: var(--surface); border-radius: 30px; box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06); max-width: 640px; }
+html[data-design="glass"] .reviewer .cardarea { padding-top: 12px; }
+html[data-design="glass"] .reviewer .meta { padding: 0 6px 8px; }
+html[data-design="glass"] .reviewer .bottom { background: transparent; }
+html[data-design="glass"] .reveal { max-width: 420px; }
+html[data-design="glass"] .answer-buttons { gap: 10px; }
+html[data-design="glass"] .answer-buttons button { border-radius: 22px; min-height: 66px; }
+html[data-design="glass"] .answer-buttons button.ease3 { box-shadow: var(--glass-rim), var(--glass-shadow), inset 0 0 0 2px color-mix(in srgb, var(--good) 70%, transparent); }
+html[data-design="glass"] .answer-buttons .label { color: var(--c); font-weight: 600; font-size: 16px; }
+html[data-design="glass"] .answer-buttons .label::before { display: none; }
+html[data-design="glass"] .answer-buttons .ivl { font-family: var(--font-ui); color: var(--muted); font-size: 13px; }
+html[data-design="glass"] .remaining { font-family: var(--font-ui); font-size: 13px; }
+
+/* ---------- courses ---------- */
+html[data-design="glass"] .option { border-radius: 18px; min-height: 54px; background: var(--surface); color: var(--fg); padding: 10px 18px; box-shadow: inset 0 0 0 0.5px var(--line); }
+html[data-design="glass"] .option.selected { box-shadow: inset 0 0 0 2px var(--accent); background: var(--accent-soft) !important; }
+html[data-design="glass"] .option.wrong { box-shadow: inset 0 0 0 2px var(--again); }
+html[data-design="glass"] .option.correct:disabled { box-shadow: inset 0 0 0 2px var(--good); }
+html[data-design="glass"] .tile { background: var(--surface); color: var(--fg); box-shadow: inset 0 0 0 0.5px var(--line), 0 1px 2px rgba(0, 0, 0, 0.06); }
+html[data-design="glass"] .feedback { border-radius: 26px; }
+html[data-design="glass"] .meter { height: 6px; border-radius: 3px; background: var(--pill); }
+html[data-design="glass"] .meter > div { background: var(--good); }
+html[data-design="glass"] .prompt-text { font-family: var(--font-display); font-weight: 700; }
+
+/* ---------- browser ---------- */
+html[data-design="glass"] .browser thead th { background: var(--surface); }
+html[data-design="glass"] .browser tbody tr.sel { box-shadow: none; }
+html[data-design="glass"] .browser .sidebar div { border-radius: 10px; }
+
+/* ---------- phone ---------- */
+@media (max-width: 760px) {
+  /* floating capsule tab bar, inset from the screen edges */
+  html[data-design="glass"] .rail {
+    position: fixed; inset: auto max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    margin: 0; height: 64px; padding: 5px; border-radius: 32px; top: auto; border: 0;
+    transition: right 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1), width 0.35s;
+  }
+  html[data-design="glass"].native .rail { height: 64px; }
+  html[data-design="glass"] .rail-item { min-height: 54px; border-radius: 27px; padding: 6px 0 4px; font-size: 10px; font-weight: 500; }
+  html[data-design="glass"] .rail-item.on { background: var(--pill); color: var(--accent); }
+  html[data-design="glass"] .rail-more { display: flex; flex: 1; }
+  /* minimized while scrolling down: only the current tab remains, as a small glass circle */
+  html[data-design="glass"].tabs-min .rail { right: calc(100% - 64px - max(16px, env(safe-area-inset-left, 0px))); }
+  html[data-design="glass"].tabs-min .rail-item:not(.on), html[data-design="glass"].tabs-min .rail-more { display: none; }
+  html[data-design="glass"].tabs-min .rail-item.on { font-size: 0; gap: 0; }
+  html[data-design="glass"] .main { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  html[data-design="glass"] .main.focus { padding-bottom: 0; }
+  html[data-design="glass"] .topbar .logo { display: none; }
+  html[data-design="glass"] .topbar { justify-content: flex-end; }
+  /* partial sheets are inset with glass */
+  html[data-design="glass"] .modal-bg { padding: 0 8px calc(8px + env(safe-area-inset-bottom, 0px)); }
+  html[data-design="glass"] .modal { border-radius: 34px; border: 0; }
+  html[data-design="glass"] .modal::before { background: var(--faint); }
+  html[data-design="glass"] .page { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  html[data-design="glass"] .answer-buttons { gap: 8px; }
+}

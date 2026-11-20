@@ -3,18 +3,18 @@ import { useEffect, useRef } from "react";
 const BASE_CSS = `
 :host { display: block; }
 .card { padding: 40px 28px; min-height: 100%; line-height: 1.35; }
-.cloze { font-weight: 600; color: #f2b84b; }
-hr#answer { width: 40px; height: 2px; border: 0; background: #f2b84b; margin: 24px auto; }
+.cloze { font-weight: 600; color: var(--accent, #f2b84b); }
+hr#answer { width: 40px; height: 2px; border: 0; background: var(--accent, #f2b84b); margin: 24px auto; }
 #typeans { font-family: "Geist Mono", ui-monospace, monospace; font-size: 18px; }
-input#typeans { width: 90%; max-width: 480px; padding: 10px 12px; border-radius: 10px; border: 1px solid #2e333c; background: #15181d; color: #ece9e4; outline: none; }
-input#typeans:focus { border-color: #f2b84b; }
+input#typeans { width: 90%; max-width: 480px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-strong, #2e333c); background: var(--surface, #15181d); color: inherit; font-size: 17px; outline: none; }
+input#typeans:focus { border-color: var(--accent, #f2b84b); }
 .typeGood { background: #1e3a28; color: #8fe0a8; } .typeBad { background: #45231f; color: #ffb4ab; } .typeMissed { background: #2a2e36; color: #c9c5bf; }
-.tts { border: 1px solid #2e333c; border-radius: 10px; background: #15181d; color: #ece9e4; width: 36px; height: 36px; cursor: pointer; font-size: 12px; vertical-align: middle; }
-a { color: #f2b84b; }
+.tts { border: 1px solid var(--line-strong, #2e333c); border-radius: 999px; background: var(--surface, #15181d); color: inherit; width: 36px; height: 36px; cursor: pointer; font-size: 12px; vertical-align: middle; }
+a { color: var(--accent, #f2b84b); }
 img { max-width: 100%; }
 /* The app is dark: neutralise light backgrounds from note-type styling (Anki's night mode). */
 .card.nightMode { background-color: transparent; color: inherit; }
-.nightMode .cloze { color: #f2b84b; }
+.nightMode .cloze { color: var(--accent, #f2b84b); }
 `;
 
 

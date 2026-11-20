@@ -178,6 +178,8 @@ export interface Prefs {
   lastAddDeck: ID;
   targetLang: string; // BCP-47 language used by {{tts auto:Field}}
   haptics: boolean;
+  /** UI design: "focus" (dark, Vocla's own) or "glass" (Liquid Glass, like a stock iOS app). Unset = app default. */
+  design?: "focus" | "glass";
 }
 
 export interface Collection {

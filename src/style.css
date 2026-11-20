@@ -382,3 +382,4 @@ html.native .main { height: 100%; overflow-y: auto; -webkit-overflow-scrolling: 
 html.native .rail { height: 100%; }
 html.native .reviewer { min-height: 0; height: 100%; }
 @media (max-width: 760px) { html.native .rail { height: auto; } }
+.large-title { display: none; }

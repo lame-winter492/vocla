@@ -126,6 +126,7 @@ export function DeckList() {
 
   return (
     <div className="page today">
+      <h1 className="large-title">Today</h1>
       <section className="hero" aria-label="Today">
         <div className="muted">
           {weekday}

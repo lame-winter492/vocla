@@ -1,6 +1,7 @@
 import { askConfirm, showMessage } from "./dialog";
 import { store, useCol } from "../lib/store";
 import { useNav } from "./nav";
+import { currentDesign } from "./App";
 
 export function Prefs() {
   const col = useCol();
@@ -21,6 +22,17 @@ export function Prefs() {
         <label>
           Learn ahead limit{" "}
           <input type="number" min={0} value={p.learnAheadMins} onChange={(e) => set(() => (p.learnAheadMins = Number(e.target.value)))} /> mins
+        </label>
+      </fieldset>
+      <fieldset>
+        <legend>Appearance</legend>
+        <label>
+          <input type="radio" name="design" checked={currentDesign(p.design) === "focus"} onChange={() => set(() => (p.design = "focus"))} /> Focus: dark,
+          one big next step
+        </label>
+        <label>
+          <input type="radio" name="design" checked={currentDesign(p.design) === "glass"} onChange={() => set(() => (p.design = "glass"))} /> Liquid
+          Glass: like a built-in iOS app, follows light/dark mode
         </label>
       </fieldset>
       <fieldset>
