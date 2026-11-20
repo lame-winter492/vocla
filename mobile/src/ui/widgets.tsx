@@ -1,7 +1,7 @@
 // Small animated pieces: rolling digits, progress rings, Liquid Glass circle buttons.
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import type { LucideIcon } from 'lucide-react-native';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   FadeInDown,
@@ -22,11 +22,10 @@ import { PressScale } from './kit';
 
 /** Digits roll up (count grew) or down (count shrank), like iOS's numeric text transition. */
 export function RollingNumber({ value, style }: { value: number; style?: StyleProp<TextStyle> }) {
-  const prev = useRef(value);
-  const up = value >= prev.current;
-  useEffect(() => {
-    prev.current = value;
-  }, [value]);
+  // remember the last value and which way it moved (React's "adjust state while rendering" pattern)
+  const [last, setLast] = useState({ value, up: true });
+  if (last.value !== value) setLast({ value, up: value >= last.value });
+  const up = last.value !== value ? value >= last.value : last.up;
   const digits = String(value).split('');
   return (
     <LayoutAnimationConfig skipEntering>

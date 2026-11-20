@@ -1,56 +1,54 @@
-# Welcome to your Expo app 👋
+# Vocla for iOS and Android (React Native / Expo)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The native version of Vocla, built with Expo SDK 58 and Expo Router. It uses the same core as the web
+app (`../src/lib`: collection, FSRS/SM-2 scheduling, Anki search, card templates, courses), so both
+behave identically. Only the UI is native.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Run it on your iPhone
 
 ```bash
-npm run reset-project
+cd mobile
+npm install
+npx expo start
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Scan the QR code with the Camera app (it opens **Expo Go**). If something native is missing in Expo Go,
+make a development build instead: `npx expo run:ios` (needs Xcode on a Mac) or
+`npx eas-cli@latest build --profile development --platform ios` (builds in the cloud).
 
-### Other setup steps
+`npx expo start --web` runs the same app in a browser.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## What's native
 
-## Learn more
+- **Tab bar**: the system tab bar (`expo-router/native-tabs`). On iOS 26 it is Liquid Glass and
+  minimizes while you scroll. Icons are SF Symbols (iOS) and Material Symbols (Android).
+- **Navigation**: native stacks with large titles that collapse into the bar, swipe-back, the native
+  search bar in Browse, and sheets for Add / Edit / Deck Options that swipe down to dismiss.
+- **Menus**: real UIMenus in the navigation bar (`Stack.Toolbar.Menu`) and long-press context menus
+  with a preview on deck rows (`Link.Menu` / `Link.Preview`).
+- **Zoom transition**: the Today card and Study Now zoom into the session (`Link.AppleZoom`, iOS 18+).
+- **Reviewer**: cards render in a WebView, so Anki templates, CSS and `{{type:}}` / `{{tts}}` work. Tap
+  to reveal, swipe right for Good and left for Again (Reanimated + Gesture Handler, on the UI thread),
+  with haptics (expo-haptics) and speech (expo-speech).
+- **Liquid Glass controls**: `expo-glass-effect` on iOS 26; a raised disc elsewhere.
+- **Files**: the collection is a JSON file in the app's documents folder; import goes through the Files
+  picker and export through the share sheet.
 
-To learn more about developing your project with Expo, look at the following resources:
+Both designs from the web app are here (Settings → Appearance): **Liquid Glass**, which follows light
+and dark mode, and **Focus**, the dark amber design.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Layout
 
-## Join the community
+- `src/app/`: screens (Expo Router). `(tabs)/` holds Today, Courses, Browse, Stats and Settings;
+  `study/`, `lesson/`, `add`, `note/` and `deck-options/` are presented over the tabs.
+- `src/ui/`: shared UI (kit, dialogs, header actions, card view, widgets).
+- `src/theme.ts`: both designs' colours and fonts.
+- `metro.config.js`: lets Metro bundle `../src/lib` and resolves its `react` import to this app's copy.
 
-Join our community of developers creating universal apps.
+## Checks
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx tsc --noEmit
+npx expo lint
+npx expo export --platform ios --platform android   # compiles the native bundles
+```

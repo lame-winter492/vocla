@@ -3,7 +3,7 @@
 // and on release it flies off while the next card springs up. Every answer is one light impact.
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ellipsis, X } from 'lucide-react-native';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, {
@@ -30,6 +30,7 @@ import type { CardContent, CardMessage } from '@/ui/card/cardDoc';
 import { confirm, showActions, toast } from '@/ui/dialogs';
 import { haptic, speakAll, stopSpeaking } from '@/ui/feedback';
 import { Button, PressScale, T } from '@/ui/kit';
+import { useNow } from '@/ui/useNow';
 import { GlassCircle, RollingNumber } from '@/ui/widgets';
 
 const SWIPE = 96;
@@ -49,8 +50,8 @@ export default function Study() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [typedAtReveal, setTypedAtReveal] = useState<string | undefined>(undefined);
   const [answered, setAnswered] = useState(0);
-  const [started, setStarted] = useState(Date.now());
-  const [, tick] = useState(0);
+  const [started, setStarted] = useState(() => Date.now());
+  const now = useNow(1000);
   const typed = useRef<string | undefined>(undefined);
   const lastCid = useRef<number | undefined>(undefined);
   const busy = useRef(false); // a card is flying off
@@ -74,9 +75,9 @@ export default function Study() {
   // learning cards come due while you wait on the "done" screen; also drives the timer
   const done = current === null;
   useEffect(() => {
+    if (!done) return;
     const iv = setInterval(() => {
-      if (done && store.col.getNextCard(did)) next();
-      tick((x) => x + 1);
+      if (store.col.getNextCard(did)) next();
     }, 1000);
     return () => clearInterval(iv);
   }, [done, did, next]);
@@ -144,6 +145,8 @@ export default function Study() {
     });
   };
 
+  const close = () => (router.canGoBack() ? router.back() : router.replace('/today'));
+
   const reveal = () => {
     if (!card || showAnswer || busy.current) return;
     setTypedAtReveal(typed.current);
@@ -185,20 +188,20 @@ export default function Study() {
   const againStamp = useAnimatedStyle(() => ({ opacity: interpolate(tx.value, [-SWIPE, -24], [1, 0], 'clamp') }));
 
   // ---------- keyboard (web, iPad keyboards) ----------
-  const keyRef = useRef<(e: KeyboardEvent) => void>(() => {});
-  keyRef.current = (e: KeyboardEvent) => {
+  const handleKey = (key: string) => {
+    if (key === 'Escape') return close();
+    if (key === ' ' || key === 'Enter') return showAnswer ? answer(3) : reveal();
+    if (showAnswer && ['1', '2', '3', '4'].includes(key)) answer(Number(key) as Ease);
+  };
+  const onKey = useEffectEvent((e: KeyboardEvent) => {
     const tag = (e.target as HTMLElement | null)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    if (e.key === 'Escape') return close();
-    if (e.key === ' ' || e.key === 'Enter') {
-      e.preventDefault();
-      return showAnswer ? answer(3) : reveal();
-    }
-    if (showAnswer && ['1', '2', '3', '4'].includes(e.key)) answer(Number(e.key) as Ease);
-  };
+    if (e.key === ' ' || e.key === 'Enter') e.preventDefault();
+    handleKey(e.key);
+  });
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-    const h = (e: KeyboardEvent) => keyRef.current(e);
+    const h = (e: KeyboardEvent) => onKey(e);
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
   }, []);
@@ -208,9 +211,8 @@ export default function Study() {
     else if (m.type === 'enter') reveal();
     else if (m.type === 'typed') typed.current = m.value;
     else if (m.type === 'speak') speakAll(m.items);
+    else if (m.type === 'key') handleKey(m.key);
   };
-
-  const close = () => (router.canGoBack() ? router.back() : router.replace('/today'));
 
   const undo = () => {
     const l = store.undo();
@@ -272,7 +274,7 @@ export default function Study() {
           </T>
           {nextLearn ? (
             <T v="subhead" color="muted" style={{ marginTop: 6 }}>
-              Next learning card in {formatIvlSecs(Math.max(0, (nextLearn - Date.now()) / 1000), false)}. This screen picks it up automatically.
+              Next learning card in {formatIvlSecs(Math.max(0, (nextLearn - now) / 1000), false)}. This screen picks it up automatically.
             </T>
           ) : null}
         </Animated.View>
@@ -324,7 +326,7 @@ export default function Study() {
         <View style={{ flex: 1 }} />
         {conf.showTimer ? (
           <T v="caption" color="muted" style={t.mono}>
-            {Math.min(Math.floor((Date.now() - started) / 1000), conf.maxAnswerSecs)}s
+            {Math.min(Math.max(0, Math.floor((now - started) / 1000)), conf.maxAnswerSecs)}s
           </T>
         ) : null}
       </View>

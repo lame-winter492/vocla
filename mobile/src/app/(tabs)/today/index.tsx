@@ -14,6 +14,7 @@ import { roundedFont, useTheme } from '@/theme';
 import { DeckRow } from '@/ui/DeckRow';
 import { askText } from '@/ui/dialogs';
 import { Button, Monogram, PressScale, T } from '@/ui/kit';
+import { useNow } from '@/ui/useNow';
 import { GlassCircle, Ring, RollingNumber } from '@/ui/widgets';
 
 export default function Today() {
@@ -21,6 +22,7 @@ export default function Today() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const glass = t.design === 'glass';
+  const now = useNow(15000);
 
   const all = col.counts(ALL_DECKS);
   const total = all.newCount + all.learnCount + all.reviewCount;
@@ -92,7 +94,7 @@ export default function Today() {
         {total > 0
           ? `${all.reviewCount} due · ${all.learnCount} learning · ${all.newCount} new · about ${minutes} min`
           : nextLearn
-            ? `Next learning card in ${formatIvlSecs(Math.max(0, (nextLearn - Date.now()) / 1000), false)}.`
+            ? `Next learning card in ${formatIvlSecs(Math.max(0, (nextLearn - now) / 1000), false)}.`
             : "You're done for today."}
       </T>
       {heroHref ? (

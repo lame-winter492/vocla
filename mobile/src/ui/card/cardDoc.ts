@@ -19,6 +19,7 @@ export type CardMessage =
   | { type: 'enter' }
   | { type: 'typed'; value: string }
   | { type: 'speak'; items: { text: string; lang: string }[] }
+  | { type: 'key'; key: string }
   | { type: 'ready' };
 
 const baseCss = (t: Theme) => `
@@ -51,6 +52,13 @@ const bridge = `
   }
   // {{tts}} buttons call this
   window.voclaSpeak = function (text, lang) { post({ type: 'speak', items: [{ text: text, lang: lang }] }); };
+  // once the card has focus, keyboard shortcuts would stop at the frame: hand them to the app
+  document.addEventListener('keydown', function (e) {
+    var tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === ' ' || e.key === 'Enter') e.preventDefault();
+    post({ type: 'key', key: e.key });
+  });
   document.addEventListener('click', function (e) {
     if (e.target.closest && e.target.closest('button, a, input, textarea, select, [onclick]')) return;
     post({ type: 'tap' });

@@ -79,11 +79,11 @@ export function PressScale({
     <APressable
       {...rest}
       onPressIn={(e) => {
-        s.value = withTiming(scaleTo, { duration: 90 });
+        s.set(withTiming(scaleTo, { duration: 90 }));
         onPressIn?.(e);
       }}
       onPressOut={(e) => {
-        s.value = withSpring(1, SPRING);
+        s.set(withSpring(1, SPRING));
         onPressOut?.(e);
       }}
       style={[style, a]}
@@ -243,7 +243,7 @@ export function Row({
         </View>
         {value ? <T color="muted">{value}</T> : null}
         {right}
-        {toggle !== undefined ? <Switch value={toggle} onValueChange={onToggle} trackColor={{ true: t.design === 'glass' ? t.c.good : t.c.accent }} /> : null}
+        {toggle !== undefined ? <Switch value={toggle} onValueChange={onToggle} trackColor={{ true: t.design === 'glass' ? t.c.good : t.c.accent }} thumbColor="#ffffff" /> : null}
         {chevron ? <ChevronRight size={18} color={t.c.faint} strokeWidth={2.2} /> : null}
       </View>
     </View>

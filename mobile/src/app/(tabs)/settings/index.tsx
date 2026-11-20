@@ -1,5 +1,149 @@
-import { T } from '@/ui/kit';
+// Settings, laid out like the iOS Settings app: grouped sections, switches, and pickers that open a menu.
+import { router, Stack } from 'expo-router';
+import { Check } from 'lucide-react-native';
+import { View } from 'react-native';
 
-export default function Placeholder() {
-  return <T>Coming up</T>;
+import { store, useCol } from '@core/store';
+import { currentDesign, useTheme } from '@/theme';
+import { showActions, toast } from '@/ui/dialogs';
+import { haptic } from '@/ui/feedback';
+import { Group, PressScale, Row, Screen, T } from '@/ui/kit';
+
+const LANGS: [string, string][] = [
+  ['es-ES', 'Spanish'],
+  ['fr-FR', 'French'],
+  ['de-DE', 'German'],
+  ['it-IT', 'Italian'],
+  ['pt-BR', 'Portuguese (Brazil)'],
+  ['ja-JP', 'Japanese'],
+  ['ko-KR', 'Korean'],
+  ['zh-CN', 'Chinese (Mandarin)'],
+  ['nl-NL', 'Dutch'],
+  ['ru-RU', 'Russian'],
+  ['en-US', 'English (US)'],
+  ['en-GB', 'English (UK)'],
+];
+
+export default function Settings() {
+  const col = useCol();
+  const t = useTheme();
+  const prefs = col.d.prefs;
+  const design = currentDesign(prefs.design);
+  const set = (fn: () => void) => store.mutate(fn);
+
+  const designCard = (d: 'glass' | 'focus', title: string, sub: string, swatch: [string, string]) => (
+    <PressScale
+      onPress={() => {
+        haptic.select();
+        set(() => (prefs.design = d));
+      }}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: design === d }}
+      accessibilityLabel={title}
+      testID={`design-${d}`}
+      style={{
+        flex: 1,
+        padding: 12,
+        borderRadius: 18,
+        backgroundColor: t.c.surface,
+        borderWidth: 2,
+        borderColor: design === d ? t.c.accent : 'transparent',
+        gap: 8,
+      }}
+    >
+      <View style={{ height: 64, borderRadius: 12, backgroundColor: swatch[0], alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 54, height: 18, borderRadius: 9, backgroundColor: swatch[1] }} />
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <T v="subhead" weight={600} style={{ flex: 1 }}>
+          {title}
+        </T>
+        {design === d ? <Check size={16} color={t.c.accent} strokeWidth={2.6} /> : null}
+      </View>
+      <T v="caption" color="muted">
+        {sub}
+      </T>
+    </PressScale>
+  );
+
+  return (
+    <Screen>
+      <Stack.Screen options={{ title: 'Settings' }} />
+      <Group header="Appearance" footer="Liquid Glass follows your light or dark appearance. Focus is always dark.">
+        <View style={{ flexDirection: 'row', gap: 10, padding: 10 }}>
+          {designCard('glass', 'Liquid Glass', 'Like a built-in iOS app', ['#f2f2f7', '#007aff'])}
+          {designCard('focus', 'Focus', "Vocla's dark, amber look", ['#0f1115', '#f2b84b'])}
+        </View>
+      </Group>
+
+      <Group header="Studying">
+        <Row first title="Show intervals on answer buttons" toggle={prefs.showIntervalsOnButtons} onToggle={(v) => set(() => (prefs.showIntervalsOnButtons = v))} />
+        <Row title="Show remaining card counts" toggle={prefs.showRemaining} onToggle={(v) => set(() => (prefs.showRemaining = v))} />
+        <Row title="Haptics" toggle={prefs.haptics !== false} onToggle={(v) => set(() => (prefs.haptics = v))} />
+        <Row
+          title="Next day starts at"
+          value={`${String(prefs.rolloverHour).padStart(2, '0')}:00`}
+          chevron
+          onPress={() =>
+            showActions(
+              'Next day starts at',
+              [0, 2, 3, 4, 5, 6].map((h) => ({ title: `${String(h).padStart(2, '0')}:00${h === 4 ? ' (Anki default)' : ''}`, onPress: () => set(() => (prefs.rolloverHour = h)) })),
+            )
+          }
+        />
+        <Row
+          title="Learn ahead limit"
+          value={`${prefs.learnAheadMins} min`}
+          chevron
+          onPress={() => showActions('Learn ahead limit', [0, 10, 20, 30, 60].map((m) => ({ title: `${m} minutes`, onPress: () => set(() => (prefs.learnAheadMins = m)) })))}
+        />
+      </Group>
+
+      <Group header="Speech" footer="Used by {{tts auto:Field}} on cards and by courses without a language of their own.">
+        <Row
+          first
+          title="Language"
+          value={LANGS.find(([c]) => c === prefs.targetLang)?.[1] ?? prefs.targetLang}
+          chevron
+          onPress={() => showActions('Speech language', LANGS.map(([code, name]) => ({ title: name, onPress: () => set(() => (prefs.targetLang = code)) })))}
+        />
+      </Group>
+
+      <Group header="Collection">
+        <Row first title="Import & Export" chevron onPress={() => router.push('/settings/data')} />
+        <Row
+          title="Check Database"
+          onPress={() => {
+            const problems = store.update('Check Database', (c) => c.checkDatabase());
+            haptic.success();
+            toast(problems.length ? `Fixed ${problems.length} problem${problems.length > 1 ? 's' : ''}` : 'No problems found');
+          }}
+        />
+        <Row
+          title="Empty Cards"
+          subtitle="Delete cards whose template now renders empty"
+          onPress={() => {
+            const ids = store.col.emptyCards();
+            if (!ids.length) return toast('No empty cards');
+            store.update('Empty Cards', (c) => c.removeCards(ids));
+            toast(`Deleted ${ids.length} empty card${ids.length > 1 ? 's' : ''}`, { label: 'Undo', onPress: () => store.undo() });
+          }}
+        />
+        <Row
+          title="Undo"
+          value={store.undoLabel() ?? 'Nothing to undo'}
+          onPress={() => {
+            const l = store.undo();
+            toast(l ? `Undo: ${l}` : 'Nothing to undo');
+          }}
+        />
+      </Group>
+
+      <Group header="About" footer="Spaced repetition with FSRS, compatible with Anki's note types, templates and search. Icons by Lucide.">
+        <Row first title="Cards" value={String(Object.keys(col.d.cards).length)} />
+        <Row title="Notes" value={String(Object.keys(col.d.notes).length)} />
+        <Row title="Reviews" value={String(col.d.revlog.length)} />
+      </Group>
+    </Screen>
+  );
 }
