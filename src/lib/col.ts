@@ -38,6 +38,9 @@ export interface QueuedCard {
   kind: "new" | "learn" | "review";
 }
 
+/** Virtual deck id meaning "all regular decks" (the Today screen's study session). */
+export const ALL_DECKS = 0;
+
 export class Col {
   constructor(public d: Collection) {}
 
@@ -60,8 +63,9 @@ export class Col {
     const lower = name.toLowerCase();
     return Object.values(this.d.decks).find((d) => d.name.toLowerCase() === lower);
   }
-  /** Deck plus all descendants. */
+  /** Deck plus all descendants. `ALL_DECKS` (0) = every regular deck. */
   deckAndChildren(id: ID): Deck[] {
+    if (id === ALL_DECKS) return Object.values(this.d.decks).filter((d) => !d.dyn);
     const deck = this.d.decks[id];
     if (!deck) return [];
     const prefix = deck.name + "::";
@@ -492,7 +496,7 @@ export class Col {
     const learn = cards.filter((c) => (c.queue === Queue.Learn || c.queue === Queue.Preview) && c.due <= cutoff).sort((a, b) => a.due - b.due);
     const dayLearn = cards.filter((c) => c.queue === Queue.DayLearn && c.due <= today).sort((a, b) => a.due - b.due || a.id - b.id);
 
-    if (!root) return { learn, dayLearn, review: [], newCards: [], learnAheadCutoff: cutoff };
+    if (!root && did !== ALL_DECKS) return { learn, dayLearn, review: [], newCards: [], learnAheadCutoff: cutoff };
 
     // remaining limits for each deck, capped by ancestors up to root
     const remaining = new Map<ID, { n: number; r: number }>();
@@ -505,7 +509,7 @@ export class Col {
       return out;
     };
 
-    const isDyn = root.dyn;
+    const isDyn = !!root?.dyn;
     // reviews
     const revCands = cards
       .filter((c) => c.queue === Queue.Review && (isDyn || c.due <= today || (c.odid !== 0 && this.d.decks[c.did]?.dyn)))
@@ -583,7 +587,9 @@ export class Col {
       else {
         // spread new cards evenly through reviews
         const total = q.review.length + q.newCards.length;
-        const done = this.deckToday(this.d.decks[did]).revDone + this.deckToday(this.d.decks[did]).newDone;
+        const doneIn = (d: Deck) => this.deckToday(d).revDone + this.deckToday(d).newDone;
+        const root = this.d.decks[did];
+        const done = root ? doneIn(root) : this.decks().filter((d) => !d.dyn && !d.name.includes("::")).reduce((s, d) => s + doneIn(d), 0);
         const every = Math.max(1, Math.floor(total / q.newCards.length));
         takeNew = (done + 1) % every === 0;
       }

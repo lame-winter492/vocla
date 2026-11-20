@@ -2,23 +2,21 @@ import { useEffect, useRef } from "react";
 
 const BASE_CSS = `
 :host { display: block; }
-.card { padding: 28px 24px; min-height: 100%; }
-.cloze { font-weight: bold; color: blue; }
-#typeans { font-family: monospace; font-size: inherit; }
-input#typeans { width: 90%; max-width: 500px; padding: 4px; }
-.typeGood { background: #afa; } .typeBad { background: #faa; } .typeMissed { background: #ccc; }
-.tts { border: 1px solid #aaa; border-radius: 50%; background: none; width: 28px; height: 28px; cursor: pointer; font-size: 12px; }
+.card { padding: 40px 28px; min-height: 100%; line-height: 1.35; }
+.cloze { font-weight: 600; color: #f2b84b; }
+hr#answer { width: 40px; height: 2px; border: 0; background: #f2b84b; margin: 24px auto; }
+#typeans { font-family: "Geist Mono", ui-monospace, monospace; font-size: 18px; }
+input#typeans { width: 90%; max-width: 480px; padding: 10px 12px; border-radius: 10px; border: 1px solid #2e333c; background: #15181d; color: #ece9e4; outline: none; }
+input#typeans:focus { border-color: #f2b84b; }
+.typeGood { background: #1e3a28; color: #8fe0a8; } .typeBad { background: #45231f; color: #ffb4ab; } .typeMissed { background: #2a2e36; color: #c9c5bf; }
+.tts { border: 1px solid #2e333c; border-radius: 10px; background: #15181d; color: #ece9e4; width: 36px; height: 36px; cursor: pointer; font-size: 12px; vertical-align: middle; }
+a { color: #f2b84b; }
 img { max-width: 100%; }
-.card.nightMode { background-color: #191c21; color: #e5e7ea; }
-.nightMode .cloze { color: #7fb2ff; }
+/* The app is dark: neutralise light backgrounds from note-type styling (Anki's night mode). */
+.card.nightMode { background-color: transparent; color: inherit; }
+.nightMode .cloze { color: #f2b84b; }
 `;
 
-/** Matches the app theme: explicit data-theme wins, otherwise the OS setting (like Anki's night mode). */
-function isDark(): boolean {
-  const t = document.documentElement.getAttribute("data-theme");
-  if (t) return t === "dark";
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
-}
 
 /** Renders card HTML in a shadow root so note-type CSS doesn't leak into the app. */
 export function CardView({
@@ -42,7 +40,7 @@ export function CardView({
     const el = host.current;
     if (!el) return;
     const root = el.shadowRoot ?? el.attachShadow({ mode: "open" });
-    const night = isDark() ? " nightMode night_mode" : "";
+    const night = " nightMode night_mode"; // the app is dark-only
     root.innerHTML = `<style>${BASE_CSS}\n${css}</style><div class="${cardClass}${night}">${html}</div>`;
     // run template scripts like Anki does
     root.querySelectorAll("script").forEach((old) => {

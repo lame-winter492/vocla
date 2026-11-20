@@ -1,7 +1,7 @@
 // Global collection store: persistence (IndexedDB), undo/redo and change notifications.
 import { useSyncExternalStore } from "react";
 import { Col } from "./col";
-import { emptyCollection } from "./stock";
+import { CLOZE_CSS, DEFAULT_CSS, emptyCollection, LEGACY_CLOZE_CSS, LEGACY_DEFAULT_CSS } from "./stock";
 import type { Collection } from "./types";
 
 const DB_NAME = "vocla";
@@ -155,6 +155,10 @@ function migrate(data: Collection): Collection {
   data.courseProgress = data.courseProgress ?? base.courseProgress;
   data.revlog = data.revlog ?? [];
   if (!data.dconf[1]) data.dconf[1] = base.dconf[1];
+  for (const nt of Object.values(data.notetypes)) {
+    if (nt.css.trim() === LEGACY_DEFAULT_CSS.trim()) nt.css = DEFAULT_CSS;
+    else if (nt.css.trim() === LEGACY_CLOZE_CSS.trim()) nt.css = CLOZE_CSS;
+  }
   if (!data.decks[1]) data.decks[1] = base.decks[1];
   return data;
 }

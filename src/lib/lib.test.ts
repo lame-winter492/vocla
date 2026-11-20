@@ -160,3 +160,19 @@ describe("search", () => {
     expect(searchCards(col, "-(dog or cat)").length).toBe(1);
   });
 });
+
+describe("all-decks session", () => {
+  it("studies every regular deck with per-deck limits", async () => {
+    const { ALL_DECKS } = await import("./col");
+    const col = freshCol();
+    const a = col.addDeck("A");
+    const b = col.addDeck("B::Sub");
+    col.d.dconf[1].new.perDay = 2;
+    for (let i = 0; i < 3; i++) addBasic(col, `a${i}`, "x", "Basic", a.id);
+    for (let i = 0; i < 3; i++) addBasic(col, `b${i}`, "x", "Basic", b.id);
+    expect(col.counts(ALL_DECKS).newCount).toBe(4); // 2 from A, 2 from B (B::Sub capped by B)
+    const q = col.getNextCard(ALL_DECKS)!;
+    col.answer(q.card.id, 3, 1000);
+    expect(col.counts(ALL_DECKS).newCount).toBe(3);
+  });
+});

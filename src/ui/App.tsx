@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { store, useCol } from "../lib/store";
 import { AddNote } from "./AddNote";
 import { Browser } from "./Browser";
@@ -54,8 +54,17 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [route, toast]);
 
-  const tab = (label: string, r: Route, names: Route["name"][]) => (
-    <button className={names.includes(route.name) ? "active" : ""} onClick={() => setRoute(r)}>
+  const [more, setMore] = useState(false);
+  const railItem = (label: string, icon: ReactNode, r: Route, names: Route["name"][]) => (
+    <button
+      className={`rail-item${names.includes(route.name) ? " on" : ""}`}
+      aria-current={names.includes(route.name) ? "page" : undefined}
+      onClick={() => {
+        setMore(false);
+        setRoute(r);
+      }}
+    >
+      {icon}
       {label}
     </button>
   );
@@ -112,37 +121,126 @@ export function App() {
       break;
   }
 
+  // study and lessons take the whole screen, on desktop and phone alike
+  const focus = route.name === "study" || route.name === "lesson";
+  const moreNames: Route["name"][] = ["notetypes", "import", "export", "prefs"];
+
   return (
     <Nav.Provider value={{ go, toast, route }}>
-      <header className="appbar">
-        <span className="brand">Vocla</span>
-        <nav className="tabs">
-        {tab("Decks", { name: "decks" }, ["decks", "overview", "study", "options", "filtered", "custom"])}
-        {tab("Courses", { name: "courses" }, ["courses", "course", "lesson"])}
-        {tab("Add", { name: "add" }, ["add"])}
-        {tab("Browse", { name: "browse" }, ["browse"])}
-        {tab("Stats", { name: "stats" }, ["stats"])}
-        {tab("Note Types", { name: "notetypes" }, ["notetypes"])}
-        {tab("Import", { name: "import" }, ["import"])}
-        {tab("Export", { name: "export" }, ["export"])}
-        {tab("Preferences", { name: "prefs" }, ["prefs"])}
-        </nav>
-        <div className="utility">
-        <button
-          title="Undo (Ctrl+Z)"
-          disabled={!store.undoLabel()}
-          onClick={() => {
-            const l = store.undo();
-            if (l) toast(`Undo: ${l}`);
-          }}
-        >
-          Undo
-        </button>
+      {focus ? (
+        <main className="main focus">{page}</main>
+      ) : (
+        <div className="shell">
+          <nav className="rail" aria-label="Sections">
+            <div className="logo" aria-hidden="true" />
+            {railItem("Today", ICONS.today, { name: "decks" }, ["decks", "overview", "options", "filtered", "custom"])}
+            {railItem("Courses", ICONS.courses, { name: "courses" }, ["courses", "course"])}
+            {railItem("Browse", ICONS.browse, { name: "browse" }, ["browse", "add"])}
+            {railItem("Stats", ICONS.stats, { name: "stats" }, ["stats"])}
+            <div className="rail-spacer" />
+            <div className="rail-more">
+              <button
+                className={`rail-item${moreNames.includes(route.name) || more ? " on" : ""}`}
+                aria-expanded={more}
+                onClick={() => setMore(!more)}
+              >
+                {ICONS.more}
+                More
+              </button>
+              {more && (
+                <div className="menu" onMouseLeave={() => setMore(false)}>
+                  {(
+                    [
+                      ["Note types", { name: "notetypes" }],
+                      ["Import", { name: "import" }],
+                      ["Export", { name: "export" }],
+                      ["Preferences", { name: "prefs" }],
+                    ] as [string, Route][]
+                  ).map(([l, r]) => (
+                    <button
+                      key={l}
+                      onClick={() => {
+                        setMore(false);
+                        setRoute(r);
+                      }}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </nav>
+          <div className="main">
+            <header className="topbar">
+              <div className="logo" aria-hidden="true" />
+              <button className="searchbtn" aria-label="Search cards" onClick={() => setRoute({ name: "browse" })}>
+                {ICONS.search}
+                <span className="label">Search cards</span>
+                <span className="kbd">B</span>
+              </button>
+              <button
+                className="icon"
+                aria-label="Undo"
+                title={store.undoLabel() ? `Undo ${store.undoLabel()} (Ctrl+Z)` : "Nothing to undo"}
+                disabled={!store.undoLabel()}
+                onClick={() => {
+                  const l = store.undo();
+                  if (l) toast(`Undo: ${l}`);
+                }}
+              >
+                {ICONS.undo}
+              </button>
+              <button onClick={() => setRoute({ name: "add" })} aria-label="Add card">
+                + Add
+              </button>
+            </header>
+            {page}
+          </div>
         </div>
-      </header>
-      {page}
-      {msg && <div className="toast">{msg}</div>}
+      )}
+      {msg && (
+        <div className={`toast${focus ? " top" : ""}`} role="status">
+          {msg}
+        </div>
+      )}
       <DialogHost />
     </Nav.Provider>
   );
 }
+
+const svg = (d: ReactNode) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {d}
+  </svg>
+);
+const ICONS = {
+  today: svg(
+    <>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l3 2" />
+    </>,
+  ),
+  courses: svg(<path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2zM8 7h6" />),
+  browse: svg(
+    <>
+      <circle cx="11" cy="11" r="6" />
+      <path d="m20 20-4.5-4.5" />
+    </>,
+  ),
+  stats: svg(<path d="M5 20V10M12 20V4M19 20v-7" />),
+  more: svg(
+    <>
+      <circle cx="5" cy="12" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+    </>,
+  ),
+  search: svg(
+    <>
+      <circle cx="11" cy="11" r="6" />
+      <path d="m20 20-4.5-4.5" />
+    </>,
+  ),
+  undo: svg(<path d="M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3" />),
+};

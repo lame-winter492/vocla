@@ -19,6 +19,20 @@ export function newGuid(): string {
 }
 
 export const DEFAULT_CSS = `.card {
+  font-family: "Geist", system-ui, sans-serif;
+  font-size: 26px;
+  text-align: center;
+}
+`;
+
+export const CLOZE_CSS = DEFAULT_CSS + `.cloze {
+  font-weight: 600;
+  color: #f2b84b;
+}
+`;
+
+/** Earlier stock styling; note types still using it unchanged are upgraded on load. */
+export const LEGACY_DEFAULT_CSS = `.card {
   font-family: arial;
   font-size: 20px;
   text-align: center;
@@ -26,8 +40,7 @@ export const DEFAULT_CSS = `.card {
   background-color: white;
 }
 `;
-
-export const CLOZE_CSS = DEFAULT_CSS + `.cloze {
+export const LEGACY_CLOZE_CSS = LEGACY_DEFAULT_CSS + `.cloze {
   font-weight: bold;
   color: blue;
 }

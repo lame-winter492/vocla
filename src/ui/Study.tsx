@@ -1,6 +1,6 @@
 import { askConfirm, modalOpen } from "./dialog";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { QueuedCard } from "../lib/col";
+import { ALL_DECKS, type QueuedCard } from "../lib/col";
 import { store, useCol } from "../lib/store";
 import { formatIvlSecs } from "../lib/time";
 import type { Ease, ID, Note } from "../lib/types";
@@ -23,6 +23,9 @@ export function Study({ did }: { did: ID }) {
   const lastCid = useRef<ID | undefined>(undefined);
   const viewRef = useRef<HTMLDivElement>(null);
   const [done, setDone] = useState(false);
+  const [answered, setAnswered] = useState(0); // cards answered this session (for the progress line)
+  const [tools, setTools] = useState(false);
+  const leave = () => go(did === ALL_DECKS ? { name: "decks" } : { name: "overview", did });
 
   const next = useCallback(() => {
     const q = store.col.getNextCard(did, lastCid.current);
@@ -34,7 +37,7 @@ export function Study({ did }: { did: ID }) {
   }, [did]);
 
   useEffect(() => {
-    store.mutate((c) => (c.d.prefs.currentDeck = did));
+    if (did !== ALL_DECKS) store.mutate((c) => (c.d.prefs.currentDeck = did));
     next();
   }, [did, next]);
 
@@ -61,6 +64,7 @@ export function Study({ did }: { did: ID }) {
     const { leech } = store.update("Review", (c) => c.answer(card.id, ease, Date.now() - started));
     if (leech) toast(conf.lapse.leechAction === "suspend" ? "Card was a leech and has been suspended." : "Card was marked as a leech.");
     lastCid.current = card.id;
+    setAnswered((n) => n + 1);
     next();
   };
 
@@ -68,6 +72,7 @@ export function Study({ did }: { did: ID }) {
     const l = store.undo();
     if (l) {
       toast(`Undo: ${l}`);
+      if (l === "Review") setAnswered((n) => Math.max(0, n - 1));
       lastCid.current = undefined;
       next();
     }
@@ -85,7 +90,7 @@ export function Study({ did }: { did: ID }) {
     const t = e.target as HTMLElement;
     if (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT") return;
     const k = e.key;
-    if (k === "Escape") return go({ name: "overview", did });
+    if (k === "Escape") return tools ? setTools(false) : leave();
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === "z") {
       e.preventDefault();
       e.stopPropagation();
@@ -139,15 +144,31 @@ export function Study({ did }: { did: ID }) {
   if (!card || !current) {
     const nextLearn = col.nextLearnDue(did);
     return (
-      <div className="page narrow overview">
-        <h2>Congratulations! You have finished this deck for now.</h2>
-        {nextLearn && <p>The next learning card will be ready in {formatIvlSecs(Math.max(0, (nextLearn - Date.now()) / 1000), false)}.</p>}
-        <div className="row" style={{ justifyContent: "center" }}>
-          <button className="primary" onClick={() => go({ name: "decks" })}>
-            Decks
+      <div className="page narrow review-done">
+        <div className="hero">
+          <div className="muted">{answered > 0 ? `${answered} cards reviewed this session` : "Nothing to study here right now"}</div>
+          <div className="big-number">
+            <b>Done</b>
+            <span>for now</span>
+          </div>
+          {nextLearn && (
+            <div className="breakdown">Next learning card in {formatIvlSecs(Math.max(0, (nextLearn - Date.now()) / 1000), false)}. This screen picks it up automatically.</div>
+          )}
+        </div>
+        <div className="row">
+          <button className="primary big" onClick={() => go({ name: "decks" })}>
+            Back to Today
           </button>
-          {!col.deck(did)?.dyn && <button onClick={() => go({ name: "custom", did })}>Custom Study</button>}
-          {store.undoLabel() === "Review" && <button onClick={undo}>Undo Review</button>}
+          {did !== ALL_DECKS && !col.deck(did)?.dyn && (
+            <button className="big" onClick={() => go({ name: "custom", did })}>
+              Custom study
+            </button>
+          )}
+          {store.undoLabel() === "Review" && (
+            <button className="big ghost" onClick={undo}>
+              Undo last answer
+            </button>
+          )}
         </div>
       </div>
     );
@@ -157,19 +178,73 @@ export function Study({ did }: { did: ID }) {
   const note = col.d.notes[card.nid];
   const marked = note?.tags.some((t) => t.toLowerCase() === "marked");
   const counts = col.studyCounts(did);
+  const remaining = counts.newCount + counts.learnCount + counts.reviewCount;
+  const sessionTotal = answered + remaining;
   const ivls = showAnswer ? col.nextIntervals(card) : null;
   const elapsed = Math.floor((Date.now() - started) / 1000);
   const deckName = col.deck(card.odid || card.did)?.name ?? "";
+  const tool = (label: string, key: string, fn: () => void, cls = "") => (
+    <button
+      className={cls}
+      onClick={() => {
+        setTools(false);
+        fn();
+      }}
+    >
+      {label} <span className="kbd">{key}</span>
+    </button>
+  );
 
   return (
     <div className="reviewer">
+      <header className="review-head">
+        <button className="ghost icon" aria-label="End session (Esc)" onClick={leave}>
+          ✕
+        </button>
+        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={sessionTotal} aria-valuenow={answered}>
+          <div style={{ width: `${sessionTotal ? (answered / sessionTotal) * 100 : 0}%` }} />
+        </div>
+        <span className="review-count">
+          {answered}/{sessionTotal}
+        </span>
+        <button className="ghost icon" aria-label="Card actions" aria-expanded={tools} onClick={() => setTools(!tools)}>
+          ⋯
+        </button>
+        {tools && (
+          <div className="menu" style={{ right: 16, top: "calc(100% - 4px)" }} onMouseLeave={() => setTools(false)}>
+            {tool("Edit note", "e", () => setEditing(structuredClone(col.d.notes[card.nid])))}
+            {tool(marked ? "Unmark" : "Mark", "*", () => store.update("Mark", (c) => c.toggleMark([card.nid])))}
+            {tool(card.flags ? "Remove flag" : "Flag red", "^1", () => store.update("Flag", (c) => c.setFlag([card.id], card.flags ? 0 : 1)))}
+            {tool("Replay audio", "r", () => replay())}
+            {tool("Card info", "i", () => setInfo(true))}
+            <hr />
+            {tool("Bury card", "-", () => noteAction("Bury", () => store.col.buryCards([card.id]), "Card buried."))}
+            {tool("Bury note", "=", () => noteAction("Bury Note", () => store.col.buryCards(store.col.cardsOfNote(card.nid).map((c) => c.id)), "Note buried."))}
+            {tool("Suspend card", "@", () => noteAction("Suspend", () => store.col.suspendCards([card.id]), "Card suspended."))}
+            {tool("Suspend note", "!", () =>
+              noteAction("Suspend Note", () => store.col.suspendCards(store.col.cardsOfNote(card.nid).map((c) => c.id)), "Note suspended."),
+            )}
+            <hr />
+            {tool("Undo", "z", undo)}
+            {tool("Deck options", "o", () => go({ name: "options", did: card.odid || card.did }))}
+            {tool(
+              "Delete note",
+              "^Del",
+              async () => {
+                if (await askConfirm("Delete this note and all its cards?")) noteAction("Delete Note", () => store.col.removeNotes([card.nid]), "Note deleted.");
+              },
+              "danger",
+            )}
+          </div>
+        )}
+      </header>
       <div className="cardarea" ref={viewRef} onDoubleClick={() => !showAnswer && reveal()}>
         <div className="row meta">
           <span>{deckName}</span>
           {marked && <span>★ marked</span>}
           {card.flags > 0 && <span className={`flagchip flag${card.flags}`}>flag {card.flags}</span>}
           <span style={{ flex: 1 }} />
-          {conf.showTimer && <span>{Math.min(elapsed, conf.maxAnswerSecs)}s</span>}
+          {conf.showTimer && <span className="mono">{Math.min(elapsed, conf.maxAnswerSecs)}s</span>}
         </div>
         <CardView
           key={`${card.id}-${showAnswer}`}
@@ -182,80 +257,26 @@ export function Study({ did }: { did: ID }) {
       </div>
       <div className="bottom">
         {col.d.prefs.showRemaining && (
-          <div className="remaining">
-            <span className={`c-new ${current.kind === "new" ? "current-count" : ""}`}>{counts.newCount}</span> +{" "}
-            <span className={`c-learn ${current.kind === "learn" ? "current-count" : ""}`}>{counts.learnCount}</span> +{" "}
+          <div className="remaining" aria-label="Remaining: new, learning, review">
+            <span className={`c-new ${current.kind === "new" ? "current-count" : ""}`}>{counts.newCount}</span> ·{" "}
+            <span className={`c-learn ${current.kind === "learn" ? "current-count" : ""}`}>{counts.learnCount}</span> ·{" "}
             <span className={`c-rev ${current.kind === "review" ? "current-count" : ""}`}>{counts.reviewCount}</span>
           </div>
         )}
         {!showAnswer ? (
           <button className="primary big reveal" onClick={reveal}>
-            Show Answer
+            Show answer
           </button>
         ) : (
           <div className="answer-buttons">
             {([1, 2, 3, 4] as Ease[]).map((e) => (
               <button key={e} className={`ease${e}`} onClick={() => answer(e)} title={`Shortcut: ${e}`}>
-                {col.d.prefs.showIntervalsOnButtons && ivls && <span className="ivl">{ivls[e] === 0 ? "end" : formatIvlSecs(ivls[e])}</span>}
                 <span className="label">{["Again", "Hard", "Good", "Easy"][e - 1]}</span>
+                {col.d.prefs.showIntervalsOnButtons && ivls && <span className="ivl">{ivls[e] === 0 ? "end" : formatIvlSecs(ivls[e])}</span>}
               </button>
             ))}
           </div>
         )}
-        <div className="tools">
-          <button onClick={() => setEditing(structuredClone(col.d.notes[card.nid]))}>
-            Edit <span className="kbd">e</span>
-          </button>
-          <button onClick={() => store.update("Mark", (c) => c.toggleMark([card.nid]))}>{marked ? "Unmark" : "Mark"} <span className="kbd">*</span></button>
-          <select
-            value={card.flags}
-            onChange={(e) => store.update("Flag", (c) => c.setFlag([card.id], Number(e.target.value)))}
-            title="Flag (Ctrl+1-7)"
-          >
-            <option value={0}>No flag</option>
-            {[1, 2, 3, 4, 5, 6, 7].map((f) => (
-              <option key={f} value={f}>
-                Flag {f} ({["Red", "Orange", "Green", "Blue", "Pink", "Turquoise", "Purple"][f - 1]})
-              </option>
-            ))}
-          </select>
-          <button onClick={() => noteAction("Bury", () => store.col.buryCards([card.id]), "Card buried.")}>
-            Bury <span className="kbd">-</span>
-          </button>
-          <button onClick={() => noteAction("Bury Note", () => store.col.buryCards(store.col.cardsOfNote(card.nid).map((c) => c.id)), "Note buried.")}>
-            Bury Note <span className="kbd">=</span>
-          </button>
-          <button onClick={() => noteAction("Suspend", () => store.col.suspendCards([card.id]), "Card suspended.")}>
-            Suspend <span className="kbd">@</span>
-          </button>
-          <button
-            onClick={() =>
-              noteAction("Suspend Note", () => store.col.suspendCards(store.col.cardsOfNote(card.nid).map((c) => c.id)), "Note suspended.")
-            }
-          >
-            Suspend Note <span className="kbd">!</span>
-          </button>
-          <button
-            className="danger"
-            onClick={async () => {
-              if (await askConfirm("Delete this note and all its cards?")) noteAction("Delete Note", () => store.col.removeNotes([card.nid]), "Note deleted.");
-            }}
-          >
-            Delete
-          </button>
-          <button onClick={() => setInfo(true)}>
-            Info <span className="kbd">i</span>
-          </button>
-          <button onClick={replay}>
-            Replay <span className="kbd">r</span>
-          </button>
-          <button onClick={undo} disabled={!store.undoLabel()}>
-            Undo <span className="kbd">z</span>
-          </button>
-          <button onClick={() => go({ name: "options", did: card.odid || card.did })}>
-            Options <span className="kbd">o</span>
-          </button>
-        </div>
       </div>
       {editing && (
         <Modal onClose={() => setEditing(null)}>
@@ -263,6 +284,7 @@ export function Study({ did }: { did: ID }) {
           <NoteEditor note={editing} nt={col.d.notetypes[editing.ntid]} onChange={setEditing} autoFocus allTags={col.allTags()} />
           <div className="row">
             <button
+              className="primary"
               onClick={() => {
                 store.update("Edit Note", (c) => c.updateNote(editing));
                 setEditing(null);
